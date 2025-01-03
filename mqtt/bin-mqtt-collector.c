@@ -114,8 +114,6 @@ static bool have_connectivity(void) {
 PROCESS_THREAD(coap_to_mqtt_process, ev, data) {
   PROCESS_BEGIN();
 
-  mqtt_status_t status;
-
   // Initialize MQTT
   snprintf(client_id, sizeof(client_id), "coap_to_mqtt_%02x%02x",
            linkaddr_node_addr.u8[6], linkaddr_node_addr.u8[7]);
