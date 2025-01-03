@@ -7,6 +7,7 @@
 #include "coap-blocking-api.h"
 #include "mqtt.h"
 #include "mqtt-prop.h"
+#include "net/ipv6/tcp-socket.h"
 #include <string.h>
 #include <stdio.h>
 
