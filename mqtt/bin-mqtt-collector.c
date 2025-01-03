@@ -19,6 +19,7 @@
 // MQTT connection object
 static struct mqtt_connection mqtt_conn;
 static char mqtt_client_id[32];
+static char pub_msg[64];
 
 // CoAP variables
 static coap_endpoint_t server_endpoint;
