@@ -14,7 +14,6 @@
 
 // CoAP Configuration
 #define COAP_SERVER_IP "fe80::202:2:2:2"  // Replace with the lid-sensor's IP address
-#define COAP_SERVER_PORT 5683
 #define COAP_RESOURCE "/lid/state"
 
 // MQTT connection object
@@ -68,7 +67,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data) {
   snprintf(mqtt_client_id, sizeof(mqtt_client_id), "coap_to_mqtt_%02x%02x",
            linkaddr_node_addr.u8[6], linkaddr_node_addr.u8[7]);
   mqtt_register(&mqtt_conn, &coap_to_mqtt_process, mqtt_client_id, mqtt_event, 128);
-  mqtt_connect(&mqtt_conn, BROKER_IP, MQTT_PORT, 1000);
+  mqtt_connect(&mqtt_conn, BROKER_IP, MQTT_PORT, 1000, MQTT_CLEAN_SESSION_ON);
 
   // Initialize CoAP
   coap_endpoint_parse(COAP_SERVER_IP, COAP_SERVER_PORT, &server_endpoint);
