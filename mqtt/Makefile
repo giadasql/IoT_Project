@@ -3,7 +3,6 @@ all: $(CONTIKI_PROJECT)
 CONTIKI = ../../..
 
 MODULES += os/net/ipv6 os/net/routing os/net/app-layer/coap
-MODULES_REL += ./resources
 
 include $(CONTIKI)/Makefile.dir-variables
 MODULES += $(CONTIKI_NG_APP_LAYER_DIR)/mqtt
