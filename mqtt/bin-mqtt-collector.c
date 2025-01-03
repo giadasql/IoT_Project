@@ -1,5 +1,6 @@
 #include "contiki.h"
 #include "coap-engine.h"
+#include "coap-blocking-api.h"
 #include "mqtt.h"
 #include <string.h>
 #include <stdio.h>
