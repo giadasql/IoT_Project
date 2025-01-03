@@ -19,12 +19,12 @@
 #define LOG_LEVEL LOG_LEVEL_DBG
 
 /* MQTT broker configuration */
-#define MQTT_CLIENT_BROKER_IP_ADDR "10.65.2.134" // Replace with your broker's IP
+#define MQTT_CLIENT_BROKER_IP_ADDR "fd00::1" // Replace with your broker's IP
 #define DEFAULT_BROKER_PORT 1883
 #define PUB_TOPIC "sensors/lid"
 
 /* CoAP server configuration */
-#define COAP_SERVER_IP "fe80::202:2:2:2" // Replace with the CoAP server's IPù
+#define COAP_SERVER_IP "fe80::202:2:2:2" // Replace with the CoAP server's IP
 #define COAP_RESOURCE "/lid/state"
 
 /*---------------------------------------------------------------------------*/
@@ -114,14 +114,17 @@ static bool have_connectivity(void) {
 /* Main Process */
 PROCESS_THREAD(coap_to_mqtt_process, ev, data) {
   PROCESS_BEGIN();
+    printf("Begin\n");
 
   // Initialize MQTT
   snprintf(client_id, sizeof(client_id), "coap_to_mqtt_%02x%02x",
            linkaddr_node_addr.u8[6], linkaddr_node_addr.u8[7]);
   mqtt_register(&conn, &coap_to_mqtt_process, client_id, mqtt_event, 128);
+  printf("Registered to MQTT\n");
+  
 
   // Initialize CoAP
-  coap_endpoint_parse(COAP_SERVER_IP, COAP_SERVER_PORT, &server_endpoint);
+  coap_endpoint_parse(COAP_SERVER_IP, strlen(COAP_SERVER_IP), &server_endpoint);
 
   state = STATE_INIT;
   etimer_set(&periodic_timer, STATE_MACHINE_PERIODIC);
@@ -132,6 +135,10 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data) {
     if ((ev == PROCESS_EVENT_TIMER && data == &periodic_timer) || ev == PROCESS_EVENT_POLL) {
       if (state == STATE_INIT && have_connectivity()) {
         state = STATE_NET_OK;
+        printf("State NET_OK\n");
+      }
+      else {
+      	printf("No connectivity :(\n");
       }
 
       if (state == STATE_NET_OK) {
@@ -154,6 +161,8 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data) {
         state = STATE_INIT;
       }
     }
+    
+    etimer_set(&periodic_timer, STATE_MACHINE_PERIODIC);
   }
 
   PROCESS_END();
