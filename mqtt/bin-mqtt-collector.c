@@ -88,7 +88,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data) {
       coap_set_header_uri_path(request, COAP_RESOURCE);
 
       // Send the CoAP GET request
-      coap_send_request(&server_endpoint, request, client_callback_lid_state);
+      COAP_BLOCKING_REQUEST(&server_endpoint, request, client_callback_lid_state);
 
       // Reset the timer
       etimer_reset(&periodic_timer);
