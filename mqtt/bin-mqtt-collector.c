@@ -19,7 +19,6 @@
 // MQTT connection object
 static struct mqtt_connection mqtt_conn;
 static char mqtt_client_id[32];
-static char pub_msg[64];
 
 // CoAP variables
 static coap_endpoint_t server_endpoint;
@@ -38,25 +37,29 @@ mqtt_event(struct mqtt_connection *conn, mqtt_event_t event, void *data) {
     printf("MQTT connected to broker at %s\n", BROKER_IP);
   } else if (event == MQTT_EVENT_DISCONNECTED) {
     printf("MQTT disconnected. Attempting to reconnect...\n");
-    mqtt_connect(&mqtt_conn, BROKER_IP, MQTT_PORT, 1000);
+    mqtt_connect(&mqtt_conn, BROKER_IP, MQTT_PORT, 1000, MQTT_CLEAN_SESSION_ON);
   }
 }
 
 // CoAP Response Callback
 static void
-coap_callback(coap_callback_request_state_t *callback_state) {
-  if (callback_state->response) {
-    char *response_payload = (char *)callback_state->response->payload;
-    printf("CoAP Response: %s\n", response_payload);
+client_callback_lid_state(coap_message_t *response) {
+  const uint8_t *payload;
+  if (response) {
+    coap_get_payload(response, &payload);
+    const char *state = (const char *)payload;  // Convert payload to string
+    printf("Lid State: %s\n", state);
 
     // Format the MQTT message
-    snprintf(pub_msg, sizeof(pub_msg), "{\"lid_state\":%s}", response_payload);
+    snprintf(pub_msg, sizeof(pub_msg), "{\"lid_state\":\"%s\"}", state);
 
     // Publish to MQTT
     mqtt_publish(&mqtt_conn, NULL, PUB_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
     printf("Published to MQTT: %s\n", pub_msg);
+
+
   } else {
-    printf("CoAP request failed or no response received.\n");
+    printf("Lid state request timed out\n");
   }
 }
 
@@ -84,7 +87,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data) {
       coap_set_header_uri_path(request, COAP_RESOURCE);
 
       // Send the CoAP GET request
-      coap_send_request(&server_endpoint, request, coap_callback);
+      coap_send_request(&server_endpoint, request, client_callback_lid_state);
 
       // Reset the timer
       etimer_reset(&periodic_timer);
