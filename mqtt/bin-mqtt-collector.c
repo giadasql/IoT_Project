@@ -8,6 +8,7 @@
 #include "sys/ctimer.h"
 #include "dev/leds.h"
 #include "os/sys/log.h"
+#include "mqtt-client.h"
 
 #include <string.h>
 #include <stdio.h>
