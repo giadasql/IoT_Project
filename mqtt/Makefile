@@ -12,5 +12,4 @@ include $(CONTIKI)/Makefile.identify-target
 
 MODULES_REL += arch/platform/$(TARGET)
 
-
 include $(CONTIKI)/Makefile.include

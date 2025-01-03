@@ -1,7 +1,12 @@
 #include "contiki.h"
 #include "coap-engine.h"
-#include "coap-blocking-api.h"
+#include "net/routing/routing.h"
 #include "mqtt.h"
+#include "mqtt-prop.h"
+#include "net/ipv6/uip.h"
+#include "net/ipv6/uip-icmp6.h"
+#include "net/ipv6/sicslowpan.h"
+#include "coap-blocking-api.h"
 #include <string.h>
 #include <stdio.h>
 
