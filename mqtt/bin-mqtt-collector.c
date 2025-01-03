@@ -1,5 +1,6 @@
 #include "contiki.h"
 #include "coap-engine.h"
+#include "coap-blocking-api.h"
 #include "mqtt.h"
 #include "net/routing/routing.h"
 #include "net/ipv6/uip.h"
@@ -22,8 +23,7 @@
 #define PUB_TOPIC "sensors/lid"
 
 /* CoAP server configuration */
-#define COAP_SERVER_IP "fe80::202:2:2:2" // Replace with the CoAP server's IP
-#define COAP_SERVER_PORT 5683
+#define COAP_SERVER_IP "fe80::202:2:2:2" // Replace with the CoAP server's IPù
 #define COAP_RESOURCE "/lid/state"
 
 /*---------------------------------------------------------------------------*/
@@ -146,7 +146,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data) {
         // Fetch the lid state using CoAP
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, COAP_RESOURCE);
-        coap_send_request(&server_endpoint, request, client_callback_lid_state);
+        COAP_BLOCKING_REQUEST(&server_endpoint, request, client_callback_lid_state);
         etimer_reset(&periodic_timer);
       }
 
