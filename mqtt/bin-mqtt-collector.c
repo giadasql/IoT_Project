@@ -121,6 +121,37 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
 }
 
 /*---------------------------------------------------------------------------*/
+/* CoAP Response Callback */
+static void client_callback_lid_state(coap_message_t *response) {
+  const uint8_t *payload;
+  if (response) {
+    coap_get_payload(response, &payload);
+    const char *lid_state = (const char *)payload; // Convert payload to string
+    printf("CoAP Response - Lid State: %s\n", lid_state);
+
+    // Format MQTT message
+    snprintf(pub_msg, sizeof(pub_msg), "{\"lid_state\":\"%s\"}", lid_state);
+
+    // Publish to MQTT
+    mqtt_publish(&conn, NULL, PUB_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+    printf("Published to MQTT: %s\n", pub_msg);
+
+    // LED logic (optional)
+    if (strcmp(lid_state, "open") == 0) {
+      leds_on(LEDS_GREEN);
+    } else if (strcmp(lid_state, "closed") == 0) {
+      leds_off(LEDS_GREEN);
+    }
+  } else {
+    printf("CoAP request timed out.\n");
+  }
+}
+
+static bool have_connectivity(void) {
+  return uip_ds6_get_global(ADDR_PREFERRED) != NULL && uip_ds6_defrt_choose() != NULL;
+}
+
+/*---------------------------------------------------------------------------*/
 /* Main Process */
 PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 {
