@@ -96,6 +96,7 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
 
     case MQTT_EVENT_PUBLISH:
       {
+      	printf("Received MQTT message\n");
         struct mqtt_message *msg = data;
         pub_handler(msg->topic, strlen(msg->topic), msg->payload_chunk, msg->payload_length);
       }
