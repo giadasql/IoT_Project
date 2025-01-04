@@ -57,12 +57,12 @@ pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
 {
   printf("Pub Handler: topic='%s' (len=%u), chunk_len=%u\n", topic, topic_len, chunk_len);
 
-  if(strcmp(topic, CONFIG_RESPONSE_TOPIC) == 0) {
+  if (strcmp(topic, CONFIG_RESPONSE_TOPIC) == 0) {
     char received_collector_id[64] = {0};
     char received_coap_address[64] = {0};
 
     jsmn_parser parser;
-    jsmntok_t tokens[16]; // Adjust size based on expected number of JSON tokens
+    jsmntok_t tokens[16]; // Adjust size based on expected tokens
     int token_count;
 
     // Initialize JSMN parser
@@ -74,23 +74,28 @@ pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
       return;
     }
 
+    /* Check if the root element is an object */
     if (token_count < 1 || tokens[0].type != JSMN_OBJECT) {
-      printf("Invalid JSON format: Root element is not an object\n");
+      printf("Expected JSON object as root\n");
       return;
     }
 
-    // Extract collector_id
+    /* Loop through all keys in the JSON object */
     for (int i = 1; i < token_count; i++) {
       if (jsmn_token_equals((const char *)chunk, &tokens[i], "collector_id")) {
-        jsmn_token_to_string((const char *)chunk, &tokens[i + 1], received_collector_id, sizeof(received_collector_id));
+        strncpy(received_collector_id, (const char *)chunk + tokens[i + 1].start,
+                tokens[i + 1].end - tokens[i + 1].start);
+        received_collector_id[tokens[i + 1].end - tokens[i + 1].start] = '\0';
         i++; // Skip the value token
       } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "coap_server_address")) {
-        jsmn_token_to_string((const char *)chunk, &tokens[i + 1], received_coap_address, sizeof(received_coap_address));
+        strncpy(received_coap_address, (const char *)chunk + tokens[i + 1].start,
+                tokens[i + 1].end - tokens[i + 1].start);
+        received_coap_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
         i++; // Skip the value token
       }
     }
 
-    // Validate and use the data
+    /* Verify and use the parsed data */
     if (strcmp(received_collector_id, COLLECTOR_ID) == 0) {
       snprintf(coap_server_address, sizeof(coap_server_address), "%s", received_coap_address);
       printf("Received CoAP server address: %s\n", coap_server_address);
@@ -100,6 +105,15 @@ pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
       printf("Response is not for this collector. Ignored.\n");
     }
   }
+}
+
+/* Helper Function: Check if a token equals a string */
+static int
+jsmn_token_equals(const char *json, const jsmntok_t *tok, const char *key)
+{
+  return (tok->type == JSMN_STRING &&
+          (int)strlen(key) == tok->end - tok->start &&
+          strncmp(json + tok->start, key, tok->end - tok->start) == 0);
 }
 
 
