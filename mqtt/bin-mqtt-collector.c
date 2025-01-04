@@ -50,6 +50,16 @@ static struct etimer periodic_timer;
 PROCESS(coap_to_mqtt_process, "CoAP-to-MQTT Bridge");
 AUTOSTART_PROCESSES(&coap_to_mqtt_process);
 
+
+/* Helper Function: Check if a token equals a string */
+static int
+jsmn_token_equals(const char *json, const jsmntok_t *tok, const char *key)
+{
+  return (tok->type == JSMN_STRING &&
+          (int)strlen(key) == tok->end - tok->start &&
+          strncmp(json + tok->start, key, tok->end - tok->start) == 0);
+}
+
 /* Publish Handler */
 static void
 pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
@@ -107,14 +117,6 @@ pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
   }
 }
 
-/* Helper Function: Check if a token equals a string */
-static int
-jsmn_token_equals(const char *json, const jsmntok_t *tok, const char *key)
-{
-  return (tok->type == JSMN_STRING &&
-          (int)strlen(key) == tok->end - tok->start &&
-          strncmp(json + tok->start, key, tok->end - tok->start) == 0);
-}
 
 
 /*---------------------------------------------------------------------------*/
