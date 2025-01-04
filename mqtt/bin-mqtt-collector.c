@@ -224,7 +224,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
         printf("Requesting CoAP server configuration...\n");
         snprintf(pub_msg, sizeof(pub_msg), "{\"collector_id\":\"%s\",\"request\":\"coap_server_address\"}", COLLECTOR_ID);
         mqtt_publish(&conn, NULL, CONFIG_REQUEST_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
-        etimer_reset(&periodic_timer);
+        printf("Published to MQTT: %s\n", pub_msg);
       }
 
       if (state == STATE_CONFIG_RECEIVED) {
