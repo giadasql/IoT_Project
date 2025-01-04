@@ -32,7 +32,6 @@ static char coap_server_address[64];
 /* MQTT variables */
 static char client_id[64];
 static char pub_msg[128];
-static char broker_address[64];
 static struct mqtt_connection conn;
 
 static uint8_t state;
