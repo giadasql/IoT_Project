@@ -160,7 +160,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
            linkaddr_node_addr.u8[6], linkaddr_node_addr.u8[7]);
   mqtt_register(&conn, &coap_to_mqtt_process, client_id, mqtt_event, 128);
   state = STATE_INIT;
-  etimer_set(&periodic_timer, CLOCK_SECOND);
+  etimer_set(&periodic_timer, CLOCK_SECOND * 5);
 
   while(1) {
     PROCESS_YIELD();
@@ -177,6 +177,9 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
       }
 
       if (state == STATE_CONFIG_REQUEST) {
+        // subscribe to config response topic
+        mqtt_subscribe(&conn, NULL, CONFIG_RESPONSE_TOPIC, MQTT_QOS_LEVEL_0);
+
         printf("Requesting CoAP server configuration...\n");
         snprintf(pub_msg, sizeof(pub_msg), "{\"collector_id\":\"%s\",\"request\":\"coap_server_address\"}", COLLECTOR_ID);
         mqtt_publish(&conn, NULL, CONFIG_REQUEST_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
