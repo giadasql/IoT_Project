@@ -7,7 +7,7 @@
 #include "sys/etimer.h"
 #include "sys/ctimer.h"
 #include "dev/leds.h"
-#include "json-util.h"
+#include "jsmn.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,29 +61,47 @@ pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
     char received_collector_id[64] = {0};
     char received_coap_address[64] = {0};
 
-    // Parse JSON object
-    json_object_t json_obj;
-    if (json_parse_object((const char *)chunk, chunk_len, &json_obj) == JSON_OK) {
-      // Extract "collector_id" field
-      if (json_object_get_string(&json_obj, "collector_id", received_collector_id, sizeof(received_collector_id)) == JSON_OK &&
-          json_object_get_string(&json_obj, "coap_server_address", received_coap_address, sizeof(received_coap_address)) == JSON_OK) {
-        // Match collector ID
-        if (strcmp(received_collector_id, COLLECTOR_ID) == 0) {
-          snprintf(coap_server_address, sizeof(coap_server_address), "%s", received_coap_address);
-          printf("Received CoAP server address: %s\n", coap_server_address);
-          coap_endpoint_parse(coap_server_address, strlen(coap_server_address), &server_endpoint);
-          state = STATE_CONFIG_RECEIVED;
-        } else {
-          printf("Response is not for this collector. Ignored.\n");
-        }
-      } else {
-        printf("JSON parsing error: Required fields missing.\n");
+    jsmn_parser parser;
+    jsmntok_t tokens[16]; // Adjust size based on expected number of JSON tokens
+    int token_count;
+
+    // Initialize JSMN parser
+    jsmn_init(&parser);
+    token_count = jsmn_parse(&parser, (const char *)chunk, chunk_len, tokens, sizeof(tokens) / sizeof(tokens[0]));
+
+    if (token_count < 0) {
+      printf("Failed to parse JSON: %d\n", token_count);
+      return;
+    }
+
+    if (token_count < 1 || tokens[0].type != JSMN_OBJECT) {
+      printf("Invalid JSON format: Root element is not an object\n");
+      return;
+    }
+
+    // Extract collector_id
+    for (int i = 1; i < token_count; i++) {
+      if (jsmn_token_equals((const char *)chunk, &tokens[i], "collector_id")) {
+        jsmn_token_to_string((const char *)chunk, &tokens[i + 1], received_collector_id, sizeof(received_collector_id));
+        i++; // Skip the value token
+      } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "coap_server_address")) {
+        jsmn_token_to_string((const char *)chunk, &tokens[i + 1], received_coap_address, sizeof(received_coap_address));
+        i++; // Skip the value token
       }
+    }
+
+    // Validate and use the data
+    if (strcmp(received_collector_id, COLLECTOR_ID) == 0) {
+      snprintf(coap_server_address, sizeof(coap_server_address), "%s", received_coap_address);
+      printf("Received CoAP server address: %s\n", coap_server_address);
+      coap_endpoint_parse(coap_server_address, strlen(coap_server_address), &server_endpoint);
+      state = STATE_CONFIG_RECEIVED;
     } else {
-      printf("Malformed JSON response. Ignored.\n");
+      printf("Response is not for this collector. Ignored.\n");
     }
   }
 }
+
 
 /*---------------------------------------------------------------------------*/
 /* MQTT Event Handler */
