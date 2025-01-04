@@ -7,6 +7,7 @@
 #include "sys/etimer.h"
 #include "sys/ctimer.h"
 #include "dev/leds.h"
+#include "json-util.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,7 +50,6 @@ static struct etimer periodic_timer;
 PROCESS(coap_to_mqtt_process, "CoAP-to-MQTT Bridge");
 AUTOSTART_PROCESSES(&coap_to_mqtt_process);
 
-/*---------------------------------------------------------------------------*/
 /* Publish Handler */
 static void
 pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
@@ -58,21 +58,29 @@ pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
   printf("Pub Handler: topic='%s' (len=%u), chunk_len=%u\n", topic, topic_len, chunk_len);
 
   if(strcmp(topic, CONFIG_RESPONSE_TOPIC) == 0) {
-    char received_collector_id[64];
-    char received_coap_address[64];
+    char received_collector_id[64] = {0};
+    char received_coap_address[64] = {0};
 
-    if (sscanf((char *)chunk, "{\"collector_id\":\"%63[^\"]\",\"coap_server_address\":\"%63[^\"]\"}",
-               received_collector_id, received_coap_address) == 2) {
-      if (strcmp(received_collector_id, COLLECTOR_ID) == 0) {
-        snprintf(coap_server_address, sizeof(coap_server_address), "%s", received_coap_address);
-        printf("Received CoAP server address: %s\n", coap_server_address);
-        coap_endpoint_parse(coap_server_address, strlen(coap_server_address), &server_endpoint);
-        state = STATE_CONFIG_RECEIVED;
+    // Parse JSON object
+    json_object_t json_obj;
+    if (json_parse_object((const char *)chunk, chunk_len, &json_obj) == JSON_OK) {
+      // Extract "collector_id" field
+      if (json_object_get_string(&json_obj, "collector_id", received_collector_id, sizeof(received_collector_id)) == JSON_OK &&
+          json_object_get_string(&json_obj, "coap_server_address", received_coap_address, sizeof(received_coap_address)) == JSON_OK) {
+        // Match collector ID
+        if (strcmp(received_collector_id, COLLECTOR_ID) == 0) {
+          snprintf(coap_server_address, sizeof(coap_server_address), "%s", received_coap_address);
+          printf("Received CoAP server address: %s\n", coap_server_address);
+          coap_endpoint_parse(coap_server_address, strlen(coap_server_address), &server_endpoint);
+          state = STATE_CONFIG_RECEIVED;
+        } else {
+          printf("Response is not for this collector. Ignored.\n");
+        }
       } else {
-        printf("Response is not for this collector. Ignored.\n");
+        printf("JSON parsing error: Required fields missing.\n");
       }
     } else {
-      printf("Malformed JSON in response. Ignored.\n");
+      printf("Malformed JSON response. Ignored.\n");
     }
   }
 }
