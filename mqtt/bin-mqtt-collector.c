@@ -190,15 +190,13 @@ static void client_callback_lid_state(coap_message_t *response) {
                  COLLECTOR_ID, lid_state, time_buffer);
 
         // Publish to MQTT
-        mqtt_publish(&conn, NULL, PUB_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+        mqtt_status_t status = mqtt_publish(&conn, NULL, PUB_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+        		if (status == MQTT_STATUS_OK) {
+    		printf("Published to topic %s: %s\n", CONFIG_REQUEST_TOPIC, pub_msg);
+		} else {
+    		printf("Failed to publish. MQTT status: %d\n", status);
+		}
         printf("Published to MQTT: %s\n", pub_msg);
-
-        // LED logic (optional)
-        if (strcmp(lid_state, "open") == 0) {
-            leds_on(LEDS_GREEN);
-        } else if (strcmp(lid_state, "closed") == 0) {
-            leds_off(LEDS_GREEN);
-        }
     } else {
         printf("CoAP request timed out.\n");
     }
@@ -228,13 +226,6 @@ static void client_callback_compactor_state(coap_message_t *response) {
         // Publish to MQTT
         mqtt_publish(&conn, NULL, "sensors/compactor", (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
         printf("Published to MQTT: %s\n", pub_msg);
-
-        // LED logic (optional)
-        if (strcmp(compactor_state, "true") == 0) {
-            leds_on(LEDS_RED);
-        } else if (strcmp(compactor_state, "false") == 0) {
-            leds_off(LEDS_RED);
-        }
     } else {
         printf("CoAP request for compactor sensor timed out.\n");
     }
