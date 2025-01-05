@@ -129,7 +129,7 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
       printf("Application has a MQTT connection\n");
       printf("Connection state after event: %d\n", conn.state);
       // subscribe to config response topic
-      mqtt_subscribe(&conn, NULL, CONFIG_RESPONSE_TOPIC, MQTT_QOS_LEVEL_0);
+
       state = STATE_CONFIG_REQUEST;
       break;
 
@@ -201,7 +201,8 @@ static bool have_connectivity(void) {
 PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 {
   PROCESS_BEGIN();
-  snprintf(client_id, sizeof(client_id), "test_cli");
+  snprintf(client_id, sizeof(client_id), "coap_to_mqtt_%02x%02x",
+           linkaddr_node_addr.u8[6], linkaddr_node_addr.u8[7]);
   mqtt_register(&conn, &coap_to_mqtt_process, client_id, mqtt_event, 128);
   state = STATE_INIT;
   etimer_set(&periodic_timer, CLOCK_SECOND);
