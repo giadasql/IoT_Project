@@ -32,7 +32,7 @@ static char coap_server_address[64];
 
 /* MQTT variables */
 static char client_id[64];
-static char pub_msg[128];
+static char pub_msg[64];
 static struct mqtt_connection conn;
 
 static uint8_t state;
@@ -201,7 +201,7 @@ static bool have_connectivity(void) {
 PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 {
   PROCESS_BEGIN();
-  snprintf(client_id, sizeof(client_id), "coap_to_mqtt_%02x%02x",
+  snprintf(client_id, sizeof(client_id), "coap2_to_mqtt_%02x%02x",
            linkaddr_node_addr.u8[6], linkaddr_node_addr.u8[7]);
   mqtt_register(&conn, &coap_to_mqtt_process, client_id, mqtt_event, 128);
   state = STATE_INIT;
@@ -224,12 +224,6 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
       if (state == STATE_CONFIG_REQUEST) {
         printf("Requesting CoAP server configuration...\n");
         snprintf(pub_msg, sizeof(pub_msg), "{\"collector_id\":\"%s\",\"request\":\"coap_server_address\"}", COLLECTOR_ID);
-if (mqtt_ready(&conn)) {
-    printf("MQTT connection is ready for publishing.\n");
-} else {
-    printf("MQTT connection is not ready for publishing.\n");
-}
-
         mqtt_status_t status = mqtt_publish(&conn, NULL, CONFIG_REQUEST_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
 		if (status == MQTT_STATUS_OK) {
     		printf("Published to topic %s: %s\n", CONFIG_REQUEST_TOPIC, pub_msg);
