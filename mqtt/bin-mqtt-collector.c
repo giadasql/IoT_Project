@@ -224,8 +224,8 @@ static void client_callback_compactor_state(coap_message_t *response) {
                  COLLECTOR_ID, compactor_state, time_buffer);
 
         // Publish to MQTT
-        mqtt_publish(&conn, NULL, "sensors/compactor", (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
-        printf("Published to MQTT: %s\n", pub_msg);
+        // mqtt_publish(&conn, NULL, "sensors/compactor", (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+        //printf("Published to MQTT: %s\n", pub_msg);
     } else {
         printf("CoAP request for compactor sensor timed out.\n");
     }
@@ -292,7 +292,6 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
  		printf("Configuration received. Fetching CoAP data...\n");
 
 	  if (state == STATE_CONFIG_RECEIVED) {
-
   			printf("Fetching Compactor State...\n");
   			coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
  			coap_set_header_uri_path(request, "/compactor/active");
