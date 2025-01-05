@@ -201,8 +201,7 @@ static bool have_connectivity(void) {
 PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 {
   PROCESS_BEGIN();
-  snprintf(client_id, sizeof(client_id), "test_cli",
-           linkaddr_node_addr.u8[6], linkaddr_node_addr.u8[7]);
+  snprintf(client_id, sizeof(client_id), "test_cli");
   mqtt_register(&conn, &coap_to_mqtt_process, client_id, mqtt_event, 128);
   state = STATE_INIT;
   etimer_set(&periodic_timer, CLOCK_SECOND);
