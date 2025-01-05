@@ -3,14 +3,23 @@ import json
 import time
 
 # MQTT Configuration
-BROKER_ADDRESS = "192.168.0.97"  # Replace with the IP address of your MQTT broker
+BROKER_ADDRESS = "10.65.2.143"  # Replace with the IP address of your MQTT broker
 BROKER_PORT = 1883
 CONFIG_REQUEST_TOPIC = "config/request"
 CONFIG_RESPONSE_TOPIC = "config/response"
 
-# Hardcoded configuration response
-COLLECTOR_ID = "coap_to_mqtt_01"
-COAP_SERVER_ADDRESS = "fe80::202:2:2:2"
+# Configuration data mapped by collector_id
+CONFIGURATIONS = {
+    "coap_to_mqtt_01": {
+        "lid_server_address": "fe80::202:2:2:2",
+        "compactor_server_address": "fe80::205:5:5:5"
+    },
+    "coap_to_mqtt_02": {
+        "lid_server_address": "fe80::203:3:3:3",
+        "compactor_server_address": "fe80::206:6:6:6"
+    }
+    # Add more configurations as needed
+}
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -25,17 +34,18 @@ def on_message(client, userdata, msg):
     try:
         # Parse the incoming request
         request = json.loads(msg.payload.decode())
-        if "collector_id" in request:
-            # Prepare the response
-            response = {
-                "collector_id": request["collector_id"],
-                "coap_server_address": COAP_SERVER_ADDRESS
-            }
+        collector_id = request.get("collector_id")
+
+        if collector_id and collector_id in CONFIGURATIONS:
+            # Retrieve the appropriate configuration and add the collector_id
+            response = {"collector_id": collector_id}
+            response.update(CONFIGURATIONS[collector_id])
+
             # Publish the response
             client.publish(CONFIG_RESPONSE_TOPIC, json.dumps(response))
             print(f"Published response to topic {CONFIG_RESPONSE_TOPIC}: {response}")
         else:
-            print("Invalid request: 'collector_id' not found in request payload")
+            print(f"Invalid or unknown collector_id: {collector_id}")
     except json.JSONDecodeError:
         print("Invalid JSON payload")
 
