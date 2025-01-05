@@ -26,7 +26,9 @@
 #define COLLECTOR_ID "coap_to_mqtt_01"
 
 /* CoAP variables */
-static coap_endpoint_t server_endpoint;
+static coap_endpoint_t lid_server_endpoint;
+static coap_endpoint_t compactor_server_endpoint;
+
 static coap_message_t request[1];
 static char coap_server_address[64];
 
@@ -61,18 +63,16 @@ jsmn_token_equals(const char *json, const jsmntok_t *tok, const char *key)
 }
 
 /* Publish Handler */
-static void
-pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
-            uint16_t chunk_len)
-{
+static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk, uint16_t chunk_len) {
   printf("Pub Handler: topic='%s' (len=%u), chunk_len=%u\n", topic, topic_len, chunk_len);
 
   if (strcmp(topic, CONFIG_RESPONSE_TOPIC) == 0) {
     char received_collector_id[64] = {0};
-    char received_coap_address[64] = {0};
+    char lid_server_address[64] = {0};
+    char compactor_server_address[64] = {0};
 
     jsmn_parser parser;
-    jsmntok_t tokens[16]; // Adjust size based on expected tokens
+    jsmntok_t tokens[32]; // Adjust size based on expected tokens
     int token_count;
 
     // Initialize JSMN parser
@@ -97,26 +97,32 @@ pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk,
                 tokens[i + 1].end - tokens[i + 1].start);
         received_collector_id[tokens[i + 1].end - tokens[i + 1].start] = '\0';
         i++; // Skip the value token
-      } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "coap_server_address")) {
-        strncpy(received_coap_address, (const char *)chunk + tokens[i + 1].start,
+      } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "lid_server_address")) {
+        strncpy(lid_server_address, (const char *)chunk + tokens[i + 1].start,
                 tokens[i + 1].end - tokens[i + 1].start);
-        received_coap_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
+        lid_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
+        i++; // Skip the value token
+      } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "compactor_server_address")) {
+        strncpy(compactor_server_address, (const char *)chunk + tokens[i + 1].start,
+                tokens[i + 1].end - tokens[i + 1].start);
+        compactor_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
         i++; // Skip the value token
       }
     }
 
     /* Verify and use the parsed data */
     if (strcmp(received_collector_id, COLLECTOR_ID) == 0) {
-      snprintf(coap_server_address, sizeof(coap_server_address), "%s", received_coap_address);
-      printf("Received CoAP server address: %s\n", coap_server_address);
-      coap_endpoint_parse(coap_server_address, strlen(coap_server_address), &server_endpoint);
+      printf("Received Lid Server Address: %s\n", lid_server_address);
+      printf("Received Compactor Server Address: %s\n", compactor_server_address);
+
+      coap_endpoint_parse(lid_server_address, strlen(lid_server_address), &server_endpoint);
+      coap_endpoint_parse(compactor_server_address, strlen(compactor_server_address), &server_endpoint);
       state = STATE_CONFIG_RECEIVED;
     } else {
       printf("Response is not for this collector. Ignored.\n");
     }
   }
 }
-
 
 
 /*---------------------------------------------------------------------------*/
@@ -163,7 +169,7 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
 }
 
 /*---------------------------------------------------------------------------*/
-/* CoAP Response Callback */
+/* CoAP Response Callback for Lid */
 static void client_callback_lid_state(coap_message_t *response) {
   const uint8_t *payload;
   if (response) {
@@ -192,6 +198,33 @@ static void client_callback_lid_state(coap_message_t *response) {
 static bool have_connectivity(void) {
   return uip_ds6_get_global(ADDR_PREFERRED) != NULL && uip_ds6_defrt_choose() != NULL;
 }
+
+/* CoAP Response Callback for Compactor Sensor */
+static void client_callback_compactor_state(coap_message_t *response) {
+  const uint8_t *payload;
+  if (response) {
+    coap_get_payload(response, &payload);
+    const char *compactor_state = (const char *)payload; // Convert payload to string
+    printf("CoAP Response - Compactor State: %s\n", compactor_state);
+
+    // Format MQTT message
+    snprintf(pub_msg, sizeof(pub_msg), "{\"compactor_active\":\"%s\"}", compactor_state);
+
+    // Publish to MQTT
+    mqtt_publish(&conn, NULL, "sensors/compactor", (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+    printf("Published to MQTT: %s\n", pub_msg);
+
+    // LED logic (optional)
+    if (strcmp(compactor_state, "true") == 0) {
+      leds_on(LEDS_RED);
+    } else if (strcmp(compactor_state, "false") == 0) {
+      leds_off(LEDS_RED);
+    }
+  } else {
+    printf("CoAP request for compactor sensor timed out.\n");
+  }
+}
+
 
 /*---------------------------------------------------------------------------*/
 /* Main Process */
@@ -229,23 +262,40 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
       if (state == STATE_CONFIG_REQUEST) {
         printf("Requesting CoAP server configuration...\n");
-        snprintf(pub_msg, sizeof(pub_msg), "{\"collector_id\":\"%s\",\"request\":\"coap_server_address\"}", COLLECTOR_ID);
-        mqtt_status_t status = mqtt_publish(&conn, NULL, CONFIG_REQUEST_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
-		if (status == MQTT_STATUS_OK) {
-    		printf("Published to topic %s: %s\n", CONFIG_REQUEST_TOPIC, pub_msg);
-		} else {
-    		printf("Failed to publish. MQTT status: %d\n", status);
-		}
-        printf("Published to MQTT: %s\n", pub_msg);
 
-        etimer_reset(&periodic_timer);
+  		// Publish configuration request message
+ 		 snprintf(pub_msg, sizeof(pub_msg),
+           "{\"collector_id\":\"%s\",\"request\":[\"lid_server_address\", \"compactor_server_address\"]}",
+           COLLECTOR_ID);
+
+ 		 mqtt_status_t status = mqtt_publish(&conn, NULL, CONFIG_REQUEST_TOPIC,
+                                      (uint8_t *)pub_msg, strlen(pub_msg),
+                                      MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+
+  		if (status == MQTT_STATUS_OK) {
+  		  printf("Published to topic %s: %s\n", CONFIG_REQUEST_TOPIC, pub_msg);
+  		} else {
+   			 printf("Failed to publish. MQTT status: %d\n", status);
+  		}
+
+  		etimer_reset(&periodic_timer);
       }
 
       if (state == STATE_CONFIG_RECEIVED) {
-        printf("Configuration received. Fetching CoAP data...\n");
-        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-        coap_set_header_uri_path(request, "/lid/state");
-        COAP_BLOCKING_REQUEST(&server_endpoint, request, client_callback_lid_state);
+ 		printf("Configuration received. Fetching CoAP data...\n");
+
+	  if (state == STATE_CONFIG_RECEIVED) {
+ 		 	printf("Fetching Lid State...\n");
+ 		 	coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+ 		 	coap_set_header_uri_path(request, "/lid/state");
+ 		 	COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback_lid_state);
+
+  			printf("Fetching Compactor State...\n");
+  			coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+ 			coap_set_header_uri_path(request, "/compactor/active");
+ 			COAP_BLOCKING_REQUEST(&compactor_server_endpoint, request, client_callback_compactor_state);
+		}
+
       }
 
       if (state == STATE_DISCONNECTED) {

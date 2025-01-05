@@ -1,5 +1,6 @@
 #include "sensor_utils.h"
 #include "coap-engine.h"
+#include "conversion_utils.h"
 #include <stdio.h>
 #include <string.h>
 

@@ -1,20 +1,12 @@
 #include "contiki.h"
 #include "coap-engine.h"
 #include "sensor_utils.h"
+#include "conversion_utils.h"
 #include <stdio.h>
 #include <string.h>
 
 // Sensor State
 static int compactor_state = 0; // 0: false, 1: true
-
-// Conversion Functions
-static void boolean_to_string(char *buffer, size_t size, void *state) {
-    snprintf(buffer, size, "%s", (*(int *)state) ? "true" : "false");
-}
-
-static void boolean_update_state(const char *payload, void *state) {
-    *(int *)state = (strcmp(payload, "true") == 0) ? 1 : 0;
-}
 
 // Define Sensor
 static generic_sensor_t compactor_sensor = {
