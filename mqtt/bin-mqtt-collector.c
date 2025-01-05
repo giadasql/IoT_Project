@@ -15,10 +15,6 @@
 #define LOG_MODULE "CoAP-to-MQTT"
 #define LOG_LEVEL LOG_LEVEL_DBG
 
-#define MQTT_CONF_MAX_PENDING_MESSAGES 10
-#define MQTT_CONF_OUT_BUFFER_SIZE 256
-
-
 /* MQTT broker configuration */
 #define MQTT_CLIENT_BROKER_IP_ADDR "fd00::1"
 #define DEFAULT_BROKER_PORT 1883
@@ -131,12 +127,7 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
   switch(event) {
     case MQTT_EVENT_CONNECTED:
       printf("Application has a MQTT connection\n");
-        if (mqtt_subscribe(&conn, NULL, CONFIG_RESPONSE_TOPIC, MQTT_QOS_LEVEL_0) == MQTT_STATUS_OK) {
-    	printf("Subscribed to topic: %s\n", CONFIG_RESPONSE_TOPIC);
-    	state = STATE_CONFIG_REQUEST;
-  	} else {
-    	printf("Failed to subscribe to topic: %s\n", CONFIG_RESPONSE_TOPIC);
-  	}
+      state = STATE_CONNECTED;
 
       break;
 
@@ -228,9 +219,18 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
         state = STATE_CONNECTING;
       }
 
+      if (state == STATE_CONNECTED) {
+		if (mqtt_subscribe(&conn, NULL, CONFIG_RESPONSE_TOPIC, MQTT_QOS_LEVEL_0) == MQTT_STATUS_OK) {
+    		printf("Subscribed to topic: %s\n", CONFIG_RESPONSE_TOPIC);
+    		state = STATE_CONFIG_REQUEST;
+  		} else {
+    		printf("Failed to subscribe to topic: %s\n", CONFIG_RESPONSE_TOPIC);
+  		}
+      }
+
       if (state == STATE_CONFIG_REQUEST) {
         printf("Requesting CoAP server configuration...\n");
-        snprintf(pub_msg, sizeof(pub_msg), "test");
+        snprintf(pub_msg, sizeof(pub_msg), "{\"collector_id\":\"%s\",\"request\":\"coap_server_address\"}", COLLECTOR_ID);
         mqtt_status_t status = mqtt_publish(&conn, NULL, CONFIG_REQUEST_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
 		if (status == MQTT_STATUS_OK) {
     		printf("Published to topic %s: %s\n", CONFIG_REQUEST_TOPIC, pub_msg);
