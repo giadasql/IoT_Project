@@ -49,6 +49,19 @@ static uint8_t state;
 
 static struct etimer periodic_timer;
 
+typedef struct {
+    char value[64];
+    char time_updated[32];
+} sensor_data_t;
+
+// Structure to hold data for both sensors
+typedef struct {
+    sensor_data_t lid_sensor;
+    sensor_data_t compactor_sensor;
+} collector_data_t;
+
+static collector_data_t collector_data;
+
 PROCESS(coap_to_mqtt_process, "CoAP-to-MQTT Bridge");
 AUTOSTART_PROCESSES(&coap_to_mqtt_process);
 
@@ -177,30 +190,18 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
 static void client_callback_lid_state(coap_message_t *response) {
     const uint8_t *payload;
     if (response) {
-        char time_buffer[32]; // Buffer for time
-        get_current_time(time_buffer, sizeof(time_buffer)); // Get current time
-
         coap_get_payload(response, &payload);
         const char *lid_state = (const char *)payload; // Convert payload to string
         printf("CoAP Response - Lid State: %s\n", lid_state);
 
-        // Format MQTT message with the new structure
-        snprintf(pub_msg, sizeof(pub_msg),
-                 "{\"collector_id\":\"%s\",\"lid_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"}}",
-                 COLLECTOR_ID, lid_state, time_buffer);
-
-        // Publish to MQTT
-        mqtt_status_t status = mqtt_publish(&conn, NULL, PUB_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
-        		if (status == MQTT_STATUS_OK) {
-    		printf("Published to topic %s: %s\n", PUB_TOPIC, pub_msg);
-		} else {
-    		printf("Failed to publish. MQTT status: %d\n", status);
-		}
-        printf("Published to MQTT: %s\n", pub_msg);
+        // Update the collector data structure
+        snprintf(collector_data.lid_sensor.value, sizeof(collector_data.lid_sensor.value), "%s", lid_state);
+        get_current_time(collector_data.lid_sensor.time_updated, sizeof(collector_data.lid_sensor.time_updated));
     } else {
-        printf("CoAP request timed out.\n");
+        printf("CoAP request for lid state timed out.\n");
     }
 }
+
 
 
 static bool have_connectivity(void) {
@@ -211,25 +212,32 @@ static bool have_connectivity(void) {
 static void client_callback_compactor_state(coap_message_t *response) {
     const uint8_t *payload;
     if (response) {
-        char time_buffer[32]; // Buffer for time
-        get_current_time(time_buffer, sizeof(time_buffer)); // Get current time
-
         coap_get_payload(response, &payload);
         const char *compactor_state = (const char *)payload; // Convert payload to string
         printf("CoAP Response - Compactor State: %s\n", compactor_state);
 
-        // Format MQTT message with the new structure
-        snprintf(pub_msg, sizeof(pub_msg),
-                 "{\"collector_id\":\"%s\",\"compactor_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"}}",
-                 COLLECTOR_ID, compactor_state, time_buffer);
-
-        // Publish to MQTT
-        // mqtt_publish(&conn, NULL, "sensors/compactor", (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
-        //printf("Published to MQTT: %s\n", pub_msg);
+        // Update the collector data structure
+        snprintf(collector_data.compactor_sensor.value, sizeof(collector_data.compactor_sensor.value), "%s", compactor_state);
+        get_current_time(collector_data.compactor_sensor.time_updated, sizeof(collector_data.compactor_sensor.time_updated));
     } else {
-        printf("CoAP request for compactor sensor timed out.\n");
+        printf("CoAP request for compactor state timed out.\n");
     }
 }
+
+static void send_aggregated_mqtt_message(void) {
+    snprintf(pub_msg, sizeof(pub_msg),
+             "{\"collector_id\":\"%s\","
+             "\"lid_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
+             "\"compactor_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"}}",
+             COLLECTOR_ID,
+             collector_data.lid_sensor.value, collector_data.lid_sensor.time_updated,
+             collector_data.compactor_sensor.value, collector_data.compactor_sensor.time_updated);
+
+    // Publish to MQTT
+    mqtt_publish(&conn, NULL, "bins", (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+    printf("Published aggregated data to MQTT: %s\n", pub_msg);
+}
+
 
 
 
@@ -302,6 +310,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
  		 	coap_set_header_uri_path(request, "/lid/state");
  		 	COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback_lid_state);
 
+            send_aggregated_mqtt_message();
 		}
 
       }
