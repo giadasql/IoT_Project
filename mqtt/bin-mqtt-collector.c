@@ -297,10 +297,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
  		 	coap_set_header_uri_path(request, "/lid/state");
  		 	COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback_lid_state);
 
-  			printf("Fetching Compactor State...\n");
-  			coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
- 			coap_set_header_uri_path(request, "/compactor/active");
- 			COAP_BLOCKING_REQUEST(&compactor_server_endpoint, request, client_callback_compactor_state);
+
 		}
 
       }
