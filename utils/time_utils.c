@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 // Helper Function to Get Current Time in ISO 8601 Format
-static void get_current_time(char *buffer, size_t size) {
+void get_current_time(char *buffer, size_t size) {
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
     snprintf(buffer, size, "%04d-%02d-%02dT%02d:%02d:%02dZ",
