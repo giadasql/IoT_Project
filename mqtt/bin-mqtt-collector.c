@@ -215,7 +215,6 @@ static void client_callback_lid_state(coap_message_t *response) {
 
         // Update timestamp
         get_current_time(collector_data.lid_sensor.time_updated, sizeof(collector_data.lid_sensor.time_updated));
-        collector_data.lid_sensor.updated = true;
     } else {
         printf("CoAP request for lid state timed out.\n");
     }
@@ -254,7 +253,6 @@ static void client_callback_compactor_state(coap_message_t *response) {
 
         // Update timestamp
         get_current_time(collector_data.compactor_sensor.time_updated, sizeof(collector_data.compactor_sensor.time_updated));
-        collector_data.compactor_sensor.updated = true;
     } else {
         printf("CoAP request for compactor sensor timed out.\n");
     }
