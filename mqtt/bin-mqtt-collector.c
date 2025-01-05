@@ -30,7 +30,6 @@ static coap_endpoint_t lid_server_endpoint;
 static coap_endpoint_t compactor_server_endpoint;
 
 static coap_message_t request[1];
-static char coap_server_address[64];
 
 /* MQTT variables */
 static char client_id[64];
