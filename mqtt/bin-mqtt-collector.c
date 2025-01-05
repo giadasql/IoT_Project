@@ -208,7 +208,7 @@ static bool have_connectivity(void) {
 }
 
 /* CoAP Response Callback for Compactor Sensor */
-static void client_callback_compactor_state(coap_message_t *response) {
+/* static void client_callback_compactor_state(coap_message_t *response) {
     const uint8_t *payload;
     if (response) {
         char time_buffer[32]; // Buffer for time
@@ -229,7 +229,7 @@ static void client_callback_compactor_state(coap_message_t *response) {
     } else {
         printf("CoAP request for compactor sensor timed out.\n");
     }
-}
+} */
 
 
 
