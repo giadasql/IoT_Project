@@ -191,18 +191,35 @@ static void client_callback_lid_state(coap_message_t *response) {
     const uint8_t *payload;
     if (response) {
         coap_get_payload(response, &payload);
-        const char *lid_state = (const char *)payload; // Convert payload to string
-        printf("CoAP Response - Lid State: %s\n", lid_state);
+        printf("CoAP Response - Lid State: %s\n", (char *)payload);
 
-        // Update the collector data structure
-        snprintf(collector_data.lid_sensor.value, sizeof(collector_data.lid_sensor.value), "%s", lid_state);
+        // Parse the received JSON payload
+        jsmn_parser parser;
+        jsmntok_t tokens[16];
+        jsmn_init(&parser);
+        int token_count = jsmn_parse(&parser, (char *)payload, strlen((char *)payload), tokens, 16);
+
+        if (token_count > 0 && tokens[0].type == JSMN_OBJECT) {
+            for (int i = 1; i < token_count; i++) {
+                if (jsmn_token_equals((char *)payload, &tokens[i], "value")) {
+                    // Extract the value field
+                    snprintf(collector_data.lid_sensor.value, sizeof(collector_data.lid_sensor.value), "%.*s",
+                             tokens[i + 1].end - tokens[i + 1].start,
+                             (char *)payload + tokens[i + 1].start);
+                    break;
+                }
+            }
+        } else {
+            printf("Failed to parse JSON payload for Lid Sensor.\n");
+        }
+
+        // Update timestamp
         get_current_time(collector_data.lid_sensor.time_updated, sizeof(collector_data.lid_sensor.time_updated));
+        collector_data.lid_sensor.updated = true;
     } else {
         printf("CoAP request for lid state timed out.\n");
     }
 }
-
-
 
 static bool have_connectivity(void) {
   return uip_ds6_get_global(ADDR_PREFERRED) != NULL && uip_ds6_defrt_choose() != NULL;
@@ -213,16 +230,36 @@ static void client_callback_compactor_state(coap_message_t *response) {
     const uint8_t *payload;
     if (response) {
         coap_get_payload(response, &payload);
-        const char *compactor_state = (const char *)payload; // Convert payload to string
-        printf("CoAP Response - Compactor State: %s\n", compactor_state);
+        printf("CoAP Response - Compactor State: %s\n", (char *)payload);
 
-        // Update the collector data structure
-        snprintf(collector_data.compactor_sensor.value, sizeof(collector_data.compactor_sensor.value), "%s", compactor_state);
+        // Parse the received JSON payload
+        jsmn_parser parser;
+        jsmntok_t tokens[16];
+        jsmn_init(&parser);
+        int token_count = jsmn_parse(&parser, (char *)payload, strlen((char *)payload), tokens, 16);
+
+        if (token_count > 0 && tokens[0].type == JSMN_OBJECT) {
+            for (int i = 1; i < token_count; i++) {
+                if (jsmn_token_equals((char *)payload, &tokens[i], "value")) {
+                    // Extract the value field
+                    snprintf(collector_data.compactor_sensor.value, sizeof(collector_data.compactor_sensor.value), "%.*s",
+                             tokens[i + 1].end - tokens[i + 1].start,
+                             (char *)payload + tokens[i + 1].start);
+                    break;
+                }
+            }
+        } else {
+            printf("Failed to parse JSON payload for Compactor Sensor.\n");
+        }
+
+        // Update timestamp
         get_current_time(collector_data.compactor_sensor.time_updated, sizeof(collector_data.compactor_sensor.time_updated));
+        collector_data.compactor_sensor.updated = true;
     } else {
-        printf("CoAP request for compactor state timed out.\n");
+        printf("CoAP request for compactor sensor timed out.\n");
     }
 }
+
 
 static void send_aggregated_mqtt_message(void) {
     snprintf(pub_msg, sizeof(pub_msg),
