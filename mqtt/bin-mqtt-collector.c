@@ -15,6 +15,10 @@
 #define LOG_MODULE "CoAP-to-MQTT"
 #define LOG_LEVEL LOG_LEVEL_DBG
 
+#define MQTT_CONF_MAX_PENDING_MESSAGES 10
+#define MQTT_CONF_OUT_BUFFER_SIZE 256
+
+
 /* MQTT broker configuration */
 #define MQTT_CLIENT_BROKER_IP_ADDR "fd00::1"
 #define DEFAULT_BROKER_PORT 1883
