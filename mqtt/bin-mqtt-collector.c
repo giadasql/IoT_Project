@@ -127,10 +127,13 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
   switch(event) {
     case MQTT_EVENT_CONNECTED:
       printf("Application has a MQTT connection\n");
-      printf("Connection state after event: %d\n", conn.state);
-      // subscribe to config response topic
-      mqtt_subscribe(&conn, NULL, CONFIG_RESPONSE_TOPIC, MQTT_QOS_LEVEL_0);
-      state = STATE_CONFIG_REQUEST;
+        if (mqtt_subscribe(&conn, NULL, CONFIG_RESPONSE_TOPIC, MQTT_QOS_LEVEL_0) == MQTT_STATUS_OK) {
+    	printf("Subscribed to topic: %s\n", CONFIG_RESPONSE_TOPIC);
+    	state = STATE_CONFIG_REQUEST;
+  	} else {
+    	printf("Failed to subscribe to topic: %s\n", CONFIG_RESPONSE_TOPIC);
+  	}
+
       break;
 
     case MQTT_EVENT_DISCONNECTED:
