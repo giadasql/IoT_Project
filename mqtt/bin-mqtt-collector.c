@@ -112,12 +112,16 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
 
     /* Verify and use the parsed data */
     if (strcmp(received_collector_id, COLLECTOR_ID) == 0) {
-      printf("Received Lid Server Address: %s\n", lid_server_address);
-      printf("Received Compactor Server Address: %s\n", compactor_server_address);
+      if (strcmp(received_collector_id, COLLECTOR_ID) == 0) {
+  		printf("Received Lid Server Address: %s\n", lid_server_address);
+  		printf("Received Compactor Server Address: %s\n", compactor_server_address);
 
-      coap_endpoint_parse(lid_server_address, strlen(lid_server_address), &server_endpoint);
-      coap_endpoint_parse(compactor_server_address, strlen(compactor_server_address), &server_endpoint);
-      state = STATE_CONFIG_RECEIVED;
+  		// Parse the CoAP server addresses
+  		coap_endpoint_parse(lid_server_address, strlen(lid_server_address), &lid_server_endpoint);
+		coap_endpoint_parse(compactor_server_address, strlen(compactor_server_address), &compactor_server_endpoint);
+
+  		state = STATE_CONFIG_RECEIVED;
+	}
     } else {
       printf("Response is not for this collector. Ignored.\n");
     }
