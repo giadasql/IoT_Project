@@ -34,7 +34,7 @@ static coap_message_t request[1];
 
 /* MQTT variables */
 static char client_id[64];
-static char pub_msg[128];
+static char pub_msg[256];
 static struct mqtt_connection conn;
 
 static uint8_t state;
@@ -192,7 +192,7 @@ static void client_callback_lid_state(coap_message_t *response) {
         // Publish to MQTT
         mqtt_status_t status = mqtt_publish(&conn, NULL, PUB_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
         		if (status == MQTT_STATUS_OK) {
-    		printf("Published to topic %s: %s\n", CONFIG_REQUEST_TOPIC, pub_msg);
+    		printf("Published to topic %s: %s\n", PUB_TOPIC, pub_msg);
 		} else {
     		printf("Failed to publish. MQTT status: %d\n", status);
 		}
