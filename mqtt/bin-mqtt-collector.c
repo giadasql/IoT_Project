@@ -181,7 +181,11 @@ static void client_callback_lid_state(coap_message_t *response) {
     printf("CoAP Response - Lid State: %s\n", lid_state);
 
     // Format MQTT message
-    snprintf(pub_msg, sizeof(pub_msg), "{\"lid_state\":\"%s\"}", lid_state);
+	snprintf(pub_msg, sizeof(pub_msg),
+         "{\"collector_id\":\"%s\",\"lid_state\":\"%s\"}",
+         COLLECTOR_ID, lid_state);
+
+
 
     // Publish to MQTT
     mqtt_publish(&conn, NULL, PUB_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
@@ -211,7 +215,10 @@ static void client_callback_compactor_state(coap_message_t *response) {
     printf("CoAP Response - Compactor State: %s\n", compactor_state);
 
     // Format MQTT message
-    snprintf(pub_msg, sizeof(pub_msg), "{\"compactor_active\":\"%s\"}", compactor_state);
+    snprintf(pub_msg, sizeof(pub_msg),
+         "{\"collector_id\":\"%s\",\"compactor_active\":\"%s\"}",
+         COLLECTOR_ID, compactor_state);
+
 
     // Publish to MQTT
     mqtt_publish(&conn, NULL, "sensors/compactor", (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
