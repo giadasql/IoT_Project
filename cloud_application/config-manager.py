@@ -13,8 +13,8 @@ CONFIGURATIONS = {
     "coap_to_mqtt_01": {
         "lid_server_address": "fe80::202:2:2:2",
         "compactor_server_address": "fe80::205:5:5:5",
-        "scale_server_address": "fe80::208:8:8:8",
-        "waste_level_server_address": "fe80::209:9:9:9"
+        "scale_server_address": "fe80::206:6:6:6",
+        "waste_level_server_address": "fe80::207:7:7:7"
     },
     "coap_to_mqtt_02": {
         "lid_server_address": "fe80::203:3:3:3",
