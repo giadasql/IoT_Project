@@ -43,10 +43,10 @@ def load_config_from_xml(xml_file):
 # Handle configuration requests
 def handle_config_request(request):
     """Handle an incoming configuration request."""
-    collector_address = request.get("collector_id")
+    collector_address = request.get("collector_address")
     for bin_id, config in bins_config.items():
         if config["collector_address"] == collector_address:
-            response = {"collector_id": collector_address}
+            response = {"collector_address": collector_address}
             response.update(config)
             return response
     return None
@@ -94,7 +94,7 @@ def on_message(client, userdata, msg):
     try:
         # Parse JSON payload
         data = json.loads(msg.payload.decode())
-        bin_id = data.get("collector_id")
+        bin_id = data.get("collector_address")
         if not bin_id:
             print("No collector_address found in payload. Skipping...")
             return
@@ -105,7 +105,7 @@ def on_message(client, userdata, msg):
                 client.publish(CONFIG_RESPONSE_TOPIC, json.dumps(response))
                 print(f"Published configuration: {response}")
             else:
-                print(f"No configuration found for collector_address: {data.get('collector_id')}")
+                print(f"No configuration found for collector_address: {data.get('collector_address')}")
             return
 
         # Check the in-memory state
@@ -130,8 +130,8 @@ def on_message(client, userdata, msg):
             db = connect_to_db()
             cursor = db.cursor()
 
-            log_changes(cursor, bin_id, changes)
             update_current_state(cursor, bin_id, data)
+            log_changes(cursor, bin_id, changes)
 
             # Commit changes to the database
             db.commit()

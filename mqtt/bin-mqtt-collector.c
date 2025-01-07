@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <locale.h>
 
 #define LOG_MODULE "CoAP-to-MQTT"
 #define LOG_LEVEL LOG_LEVEL_DBG
@@ -285,6 +286,9 @@ static bool have_connectivity(void) {
 
 /* Publish Aggregated MQTT Message */
 static void send_aggregated_mqtt_message(void) {
+  	// use point to separate the decimal part from the integer part
+  	setlocale(LC_NUMERIC, "C");
+
     snprintf(pub_msg, sizeof(pub_msg),
              "{\"collector_address\":\"%s\","
              "\"lid_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
