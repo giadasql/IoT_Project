@@ -70,7 +70,7 @@ AUTOSTART_PROCESSES(&coap_to_mqtt_process);
 
 /* Helper Function: Get Local IPv6 Address */
 static void get_local_ipv6_address(char *buffer, size_t buffer_size) {
-    uip_ds6_ipaddr_t *ipaddr = uip_ds6_get_global(ADDR_PREFERRED);
+    uip_ds6_maddr_t *ipaddr = uip_ds6_get_global(ADDR_PREFERRED);
     if (ipaddr != NULL) {
         uiplib_ipaddr_snprint(buffer, buffer_size, ipaddr);
     } else {
