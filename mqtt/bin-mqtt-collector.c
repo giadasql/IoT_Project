@@ -5,6 +5,7 @@
 #include "net/routing/routing.h"
 #include "net/ipv6/uip.h"
 #include "net/ipv6/uiplib.h"
+#include "net/ipv6/uip-ds6.h"
 #include "sys/etimer.h"
 #include "sys/ctimer.h"
 #include "dev/leds.h"
@@ -70,12 +71,19 @@ AUTOSTART_PROCESSES(&coap_to_mqtt_process);
 
 /* Helper Function: Get Local IPv6 Address */
 static void get_local_ipv6_address(char *buffer, size_t buffer_size) {
-    uip_ds6_maddr_t *ipaddr = uip_ds6_get_global(ADDR_PREFERRED);
-    if (ipaddr != NULL) {
-        uiplib_ipaddr_snprint(buffer, buffer_size, ipaddr);
-    } else {
-        snprintf(buffer, buffer_size, "unknown");
+    uip_ds6_addr_t *addr = NULL;
+
+    // Iterate through all IPv6 addresses
+    for (addr = uip_ds6_if.addr_list; addr < uip_ds6_if.addr_list + UIP_DS6_ADDR_NB; addr++) {
+        // Check if the address is used and is a link-local address
+        if (addr->isused && uip_is_addr_linklocal(&addr->ipaddr)) {
+            uiplib_ipaddr_snprint(buffer, buffer_size, &addr->ipaddr);
+            return;
+        }
     }
+
+    // If no link-local address is found, set to "unknown"
+    snprintf(buffer, buffer_size, "unknown");
 }
 
 
