@@ -1,5 +1,6 @@
 #include "contiki.h"
 #include "coap-engine.h"
+#include <stdio.h>
 
 // Declare the resource from the resource file
 extern coap_resource_t waste_level_sensor;
