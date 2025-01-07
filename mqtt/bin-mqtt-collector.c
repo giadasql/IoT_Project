@@ -37,6 +37,7 @@ static coap_message_t request[1];
 /* MQTT variables */
 static char client_id[64];
 static char pub_msg[1024];
+static char bin_id[64] = "unknown";
 static char local_ipv6_address[64]; // Buffer for local IPv6 address
 static struct mqtt_connection conn;
 
@@ -103,6 +104,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
 
   if (strcmp(topic, CONFIG_RESPONSE_TOPIC) == 0) {
     char received_collector_address[64] = {0};
+    char received_bin_id[64] = {0};
     char lid_server_address[64] = {0};
     char compactor_server_address[64] = {0};
     char scale_server_address[64] = {0};
@@ -134,7 +136,12 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
                 tokens[i + 1].end - tokens[i + 1].start);
         received_collector_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
         i++; // Skip the value token
-      } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "lid_server_address")) {
+      }  else if (jsmn_token_equals((const char *)chunk, &tokens[i], "bin_id")) {
+            strncpy(received_bin_id, (const char *)chunk + tokens[i + 1].start,
+                tokens[i + 1].end - tokens[i + 1].start);
+                i++;
+   	 }
+      else if (jsmn_token_equals((const char *)chunk, &tokens[i], "lid_server_address")) {
         strncpy(lid_server_address, (const char *)chunk + tokens[i + 1].start,
                 tokens[i + 1].end - tokens[i + 1].start);
         lid_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
@@ -167,6 +174,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
 		printf("Received Waste Level Server Address: %s\n", waste_level_server_address);
 
   		// Parse the CoAP server addresses
+        strncpy(bin_id, received_bin_id, sizeof(bin_id));
   		coap_endpoint_parse(lid_server_address, strlen(lid_server_address), &lid_server_endpoint);
 		coap_endpoint_parse(compactor_server_address, strlen(compactor_server_address), &compactor_server_endpoint);
         coap_endpoint_parse(scale_server_address, strlen(scale_server_address), &scale_server_endpoint);
@@ -290,12 +298,12 @@ static void send_aggregated_mqtt_message(void) {
   	setlocale(LC_NUMERIC, "C");
 
     snprintf(pub_msg, sizeof(pub_msg),
-             "{\"collector_address\":\"%s\","
+             "{\"bin_id\":\"%s\","
              "\"lid_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
              "\"compactor_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
              "\"scale\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
              "\"waste_level_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"}}",
-             local_ipv6_address,
+             bin_id,
              collector_data.lid_sensor.value, collector_data.lid_sensor.time_updated,
              collector_data.compactor_sensor.value, collector_data.compactor_sensor.time_updated,
              collector_data.scale.value, collector_data.scale.time_updated,

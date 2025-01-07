@@ -46,10 +46,11 @@ def handle_config_request(request):
     collector_address = request.get("collector_address")
     for bin_id, config in bins_config.items():
         if config["collector_address"] == collector_address:
-            response = {"collector_address": collector_address}
+            response = {"collector_address": collector_address, "bin_id": bin_id}
             response.update(config)
             return response
     return None
+
 
 # Connect to the database
 def connect_to_db():
@@ -94,7 +95,7 @@ def on_message(client, userdata, msg):
     try:
         # Parse JSON payload
         data = json.loads(msg.payload.decode())
-        bin_id = data.get("collector_address")
+        bin_id = data.get("bin_id")
         if not bin_id:
             print("No collector_address found in payload. Skipping...")
             return
