@@ -95,57 +95,88 @@ def on_message(client, userdata, msg):
     try:
         # Parse JSON payload
         data = json.loads(msg.payload.decode())
-        bin_id = data.get("bin_id")
-        if not bin_id:
-            print("No collector_address found in payload. Skipping...")
-            return
 
+        # Handle configuration requests
         if msg.topic == CONFIG_REQUEST_TOPIC:
-            response = handle_config_request(data)
-            if response:
-                client.publish(CONFIG_RESPONSE_TOPIC, json.dumps(response))
-                print(f"Published configuration: {response}")
-            else:
-                print(f"No configuration found for collector_address: {data.get('collector_address')}")
+            handle_config_request_message(client, data)
             return
 
-        # Check the in-memory state
-        prev_state = bins_state.get(bin_id, {})
-        changes = {}
+        # Handle sensor updates
+        if msg.topic == MQTT_TOPIC:
+            handle_sensor_update(client, data)
+            return
 
-        # Detect changes by comparing new values with the in-memory state
-        sensors = {
-            "lid_sensor": data.get("lid_sensor", {}).get("value"),
-            "compactor_sensor": data.get("compactor_sensor", {}).get("value"),
-            "waste_level_sensor": data.get("waste_level_sensor", {}).get("value"),
-            "scale": data.get("scale", {}).get("value")
-        }
+        print(f"Unhandled message on topic {msg.topic}.")
+    except Exception as e:
+        print(f"Error processing message: {e}")
 
-        for sensor, value in sensors.items():
-            if value is not None and str(value) != str(prev_state.get(sensor)):
-                changes[sensor] = value
 
-        # If there are changes, update the database and in-memory state
-        if changes or bin_id not in bins_state:
+# Handle configuration request messages
+def handle_config_request_message(client, data):
+    """Handle a configuration request message."""
+    collector_address = data.get("collector_address")
+    if not collector_address:
+        print("No collector_address found in configuration request. Skipping...")
+        return
+
+    # Fetch configuration for the collector
+    response = handle_config_request(data)
+    if response:
+        client.publish(CONFIG_RESPONSE_TOPIC, json.dumps(response))
+        print(f"Published configuration: {response}")
+    else:
+        print(f"No configuration found for collector_address: {collector_address}")
+
+
+# Handle sensor update messages
+def handle_sensor_update(client, data):
+    """Handle a sensor update message."""
+    bin_id = data.get("bin_id")
+    if not bin_id:
+        print("No bin_id found in update message. Skipping...")
+        return
+
+    # Check the in-memory state
+    prev_state = bins_state.get(bin_id, {})
+    changes = {}
+
+    # Detect changes by comparing new values with the in-memory state
+    sensors = {
+        "lid_sensor": data.get("lid_sensor", {}).get("value"),
+        "compactor_sensor": data.get("compactor_sensor", {}).get("value"),
+        "waste_level_sensor": data.get("waste_level_sensor", {}).get("value"),
+        "scale": data.get("scale", {}).get("value")
+    }
+
+    for sensor, value in sensors.items():
+        if value is not None and str(value) != str(prev_state.get(sensor)):
+            changes[sensor] = value
+
+    # If there are changes, update the database and in-memory state
+    if changes or bin_id not in bins_state:
+        try:
             # Connect to MySQL
             db = connect_to_db()
             cursor = db.cursor()
 
+            # Update the current state and log changes
             update_current_state(cursor, bin_id, data)
             log_changes(cursor, bin_id, changes)
 
             # Commit changes to the database
             db.commit()
+        except Exception as db_error:
+            print(f"Database error: {db_error}")
+        finally:
             db.close()
 
-            # Update in-memory state
-            bins_state[bin_id] = sensors
+        # Update in-memory state
+        bins_state[bin_id] = sensors
 
-            print(f"Database updated for bin {bin_id}. Changes: {changes}")
-        else:
-            print(f"No changes detected for bin {bin_id}. Skipping database update.")
-    except Exception as e:
-        print(f"Error processing message: {e}")
+        print(f"Database updated for bin {bin_id}. Changes: {changes}")
+    else:
+        print(f"No changes detected for bin {bin_id}. Skipping database update.")
+
 
 # Main function
 def main():
