@@ -164,8 +164,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
 
 /*---------------------------------------------------------------------------*/
 /* MQTT Event Handler */
-static void
-mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
+static void mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
 {
   switch(event) {
     case MQTT_EVENT_CONNECTED:
@@ -266,17 +265,6 @@ static bool have_connectivity(void) {
   return uip_ds6_get_global(ADDR_PREFERRED) != NULL && uip_ds6_defrt_choose() != NULL;
 }
 
-
-
-static void client_callback_scale(coap_message_t *response) {
-    const uint8_t *payload;
-    if (response) {
-        coap_get_payload(response, &payload);
-        printf("CoAP Response - Scale: %s\n", (char *)payload);
-
-
-    }
-}
 
 /* Publish Aggregated MQTT Message */
 static void send_aggregated_mqtt_message(void) {
