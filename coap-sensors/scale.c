@@ -16,7 +16,7 @@ PROCESS_THREAD(scale_sensor_process, ev, data)
   coap_activate_resource(&scale_sensor, "scale/value");
 
   while (1) {
-    PROCESS_WAIT_EVENT(); // Wait for events (CoAP requests)
+    PROCESS_WAIT_EVENT(); // Wait for events (e.g., CoAP requests)
   }
 
   PROCESS_END();

@@ -19,7 +19,6 @@
 /* MQTT broker configuration */
 #define MQTT_CLIENT_BROKER_IP_ADDR "fd00::1"
 #define DEFAULT_BROKER_PORT 1883
-#define PUB_TOPIC "sensors/lid"
 #define CONFIG_REQUEST_TOPIC "config/request"
 #define CONFIG_RESPONSE_TOPIC "config/response"
 
@@ -29,6 +28,8 @@
 /* CoAP variables */
 static coap_endpoint_t lid_server_endpoint;
 static coap_endpoint_t compactor_server_endpoint;
+static coap_endpoint_t scale_server_endpoint;
+static coap_endpoint_t waste_level_server_endpoint;
 
 static coap_message_t request[1];
 
@@ -58,6 +59,8 @@ typedef struct {
 typedef struct {
     sensor_data_t lid_sensor;
     sensor_data_t compactor_sensor;
+    sensor_data_t waste_level_sensor;
+    sensor_data_t scale;
 } collector_data_t;
 
 static collector_data_t collector_data;
@@ -83,6 +86,8 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
     char received_collector_id[64] = {0};
     char lid_server_address[64] = {0};
     char compactor_server_address[64] = {0};
+    char scale_server_address[64] = {0};
+    char waste_level_server_address[64] = {0};
 
     jsmn_parser parser;
     jsmntok_t tokens[32]; // Adjust size based on expected tokens
@@ -121,6 +126,17 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
         compactor_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
         i++; // Skip the value token
       }
+	else if (jsmn_token_equals((const char *)chunk, &tokens[i], "scale_server_address")) {
+        strncpy(scale_server_address, (const char *)chunk + tokens[i + 1].start,
+                tokens[i + 1].end - tokens[i + 1].start);
+        scale_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
+        i++; // Skip the value token
+    }
+	else if (jsmn_token_equals((const char *)chunk, &tokens[i], "waste_level_server_address")) {
+        strncpy(waste_level_server_address, (const char *)chunk + tokens[i + 1].start,
+                tokens[i + 1].end - tokens[i + 1].start);
+        waste_level_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
+        i++; // Skip the value token
     }
 
     /* Verify and use the parsed data */
@@ -128,10 +144,14 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
       if (strcmp(received_collector_id, COLLECTOR_ID) == 0) {
   		printf("Received Lid Server Address: %s\n", lid_server_address);
   		printf("Received Compactor Server Address: %s\n", compactor_server_address);
+        printf("Received Scale Server Address: %s\n", scale_server_address);
+		printf("Received Waste Level Server Address: %s\n", waste_level_server_address);
 
   		// Parse the CoAP server addresses
   		coap_endpoint_parse(lid_server_address, strlen(lid_server_address), &lid_server_endpoint);
 		coap_endpoint_parse(compactor_server_address, strlen(compactor_server_address), &compactor_server_endpoint);
+        coap_endpoint_parse(scale_server_address, strlen(scale_server_address), &scale_server_endpoint);
+        coap_endpoint_parse(waste_level_server_address, strlen(waste_level_server_address), &waste_level_server_endpoint);
 
   		state = STATE_CONFIG_RECEIVED;
 	}
@@ -186,37 +206,59 @@ mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
 }
 
 /*---------------------------------------------------------------------------*/
-/* CoAP Response Callback for Lid */
-static void client_callback_lid_state(coap_message_t *response) {
-    const uint8_t *payload;
-    if (response) {
-        coap_get_payload(response, &payload);
-        printf("CoAP Response - Lid State: %s\n", (char *)payload);
+/* Helper Function: Parse JSON Payload */
+static void parse_payload(const uint8_t *payload, const char *sensor_name, sensor_data_t *sensor_data) {
+    jsmn_parser parser;
+    jsmntok_t tokens[16];
+    jsmn_init(&parser);
+    int token_count = jsmn_parse(&parser, (const char *)payload, strlen((char *)payload), tokens, 16);
 
-        // Parse the received JSON payload
-        jsmn_parser parser;
-        jsmntok_t tokens[16];
-        jsmn_init(&parser);
-        int token_count = jsmn_parse(&parser, (char *)payload, strlen((char *)payload), tokens, 16);
-
-        if (token_count > 0 && tokens[0].type == JSMN_OBJECT) {
-            for (int i = 1; i < token_count; i++) {
-                if (jsmn_token_equals((char *)payload, &tokens[i], "value")) {
-                    // Extract the value field
-                    snprintf(collector_data.lid_sensor.value, sizeof(collector_data.lid_sensor.value), "%.*s",
-                             tokens[i + 1].end - tokens[i + 1].start,
-                             (char *)payload + tokens[i + 1].start);
-                    break;
-                }
+    if (token_count > 0 && tokens[0].type == JSMN_OBJECT) {
+        for (int i = 1; i < token_count; i++) {
+            if (jsmn_token_equals((char *)payload, &tokens[i], "value")) {
+                snprintf(sensor_data->value, sizeof(sensor_data->value), "%.*s",
+                         tokens[i + 1].end - tokens[i + 1].start,
+                         (char *)payload + tokens[i + 1].start);
+                get_current_time(sensor_data->time_updated, sizeof(sensor_data->time_updated));
+                printf("%s updated to: %s\n", sensor_name, sensor_data->value);
+                break;
             }
-        } else {
-            printf("Failed to parse JSON payload for Lid Sensor.\n");
         }
-
-        // Update timestamp
-        get_current_time(collector_data.lid_sensor.time_updated, sizeof(collector_data.lid_sensor.time_updated));
     } else {
-        printf("CoAP request for lid state timed out.\n");
+        printf("Failed to parse JSON payload for %s.\n", sensor_name);
+    }
+}
+
+/* CoAP Response Callbacks */
+static void client_callback_lid_state(coap_message_t *response) {
+    if (response) {
+        parse_payload(response->payload, "Lid Sensor", &collector_data.lid_sensor);
+    } else {
+        printf("CoAP request for Lid Sensor timed out.\n");
+    }
+}
+
+static void client_callback_compactor_state(coap_message_t *response) {
+    if (response) {
+        parse_payload(response->payload, "Compactor Sensor", &collector_data.compactor_sensor);
+    } else {
+        printf("CoAP request for Compactor Sensor timed out.\n");
+    }
+}
+
+static void client_callback_scale_state(coap_message_t *response) {
+    if (response) {
+        parse_payload(response->payload, "Scale Sensor", &collector_data.scale_sensor);
+    } else {
+        printf("CoAP request for Scale Sensor timed out.\n");
+    }
+}
+
+static void client_callback_waste_level_state(coap_message_t *response) {
+    if (response) {
+        parse_payload(response->payload, "Waste Level Sensor", &collector_data.waste_level_sensor);
+    } else {
+        printf("CoAP request for Waste Level Sensor timed out.\n");
     }
 }
 
@@ -224,57 +266,35 @@ static bool have_connectivity(void) {
   return uip_ds6_get_global(ADDR_PREFERRED) != NULL && uip_ds6_defrt_choose() != NULL;
 }
 
-/* CoAP Response Callback for Compactor Sensor */
-static void client_callback_compactor_state(coap_message_t *response) {
+
+
+static void client_callback_scale(coap_message_t *response) {
     const uint8_t *payload;
     if (response) {
         coap_get_payload(response, &payload);
-        printf("CoAP Response - Compactor State: %s\n", (char *)payload);
+        printf("CoAP Response - Scale: %s\n", (char *)payload);
 
-        // Parse the received JSON payload
-        jsmn_parser parser;
-        jsmntok_t tokens[16];
-        jsmn_init(&parser);
-        int token_count = jsmn_parse(&parser, (char *)payload, strlen((char *)payload), tokens, 16);
 
-        if (token_count > 0 && tokens[0].type == JSMN_OBJECT) {
-            for (int i = 1; i < token_count; i++) {
-                if (jsmn_token_equals((char *)payload, &tokens[i], "value")) {
-                    // Extract the value field
-                    snprintf(collector_data.compactor_sensor.value, sizeof(collector_data.compactor_sensor.value), "%.*s",
-                             tokens[i + 1].end - tokens[i + 1].start,
-                             (char *)payload + tokens[i + 1].start);
-                    break;
-                }
-            }
-        } else {
-            printf("Failed to parse JSON payload for Compactor Sensor.\n");
-        }
-
-        // Update timestamp
-        get_current_time(collector_data.compactor_sensor.time_updated, sizeof(collector_data.compactor_sensor.time_updated));
-    } else {
-        printf("CoAP request for compactor sensor timed out.\n");
     }
 }
 
-
+/* Publish Aggregated MQTT Message */
 static void send_aggregated_mqtt_message(void) {
     snprintf(pub_msg, sizeof(pub_msg),
              "{\"collector_id\":\"%s\","
              "\"lid_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
-             "\"compactor_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"}}",
+             "\"compactor_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
+             "\"scale_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
+             "\"waste_level_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"}}",
              COLLECTOR_ID,
              collector_data.lid_sensor.value, collector_data.lid_sensor.time_updated,
-             collector_data.compactor_sensor.value, collector_data.compactor_sensor.time_updated);
+             collector_data.compactor_sensor.value, collector_data.compactor_sensor.time_updated,
+             collector_data.scale_sensor.value, collector_data.scale_sensor.time_updated,
+             collector_data.waste_level_sensor.value, collector_data.waste_level_sensor.time_updated);
 
-    // Publish to MQTT
-    mqtt_publish(&conn, NULL, "bins", (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+    mqtt_publish(&conn, NULL, PUB_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
     printf("Published aggregated data to MQTT: %s\n", pub_msg);
 }
-
-
-
 
 /*---------------------------------------------------------------------------*/
 /* Main Process */
@@ -344,6 +364,17 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
  		 	coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
  		 	coap_set_header_uri_path(request, "/lid/state");
  		 	COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback_lid_state);
+
+			printf("Fetching Scale State...\n");
+            printf("Fetching Scale Sensor State...\n");
+            coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+            coap_set_header_uri_path(request, "/scale/value");
+            COAP_BLOCKING_REQUEST(&scale_server_endpoint, request, client_callback_scale_state);
+
+            printf("Fetching Waste Level Sensor State...\n");
+            coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+            coap_set_header_uri_path(request, "/waste/level");
+            COAP_BLOCKING_REQUEST(&waste_level_server_endpoint, request, client_callback_waste_level_state);
 
             send_aggregated_mqtt_message();
 		}

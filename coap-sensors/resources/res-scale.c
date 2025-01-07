@@ -10,11 +10,11 @@ static float scale_value = 0.0; // Initial weight value
 
 // Conversion functions for the scale sensor
 static void scale_value_to_string(char *buffer, size_t size, void *state) {
-  snprintf(buffer, size, "%.2f", *(float *)state); // Format as a decimal number with 2 places
+  snprintf(buffer, size, "%.2f", *(float *)state); // Format as a decimal number with 2 decimal places
 }
 
 static void scale_value_update_state(const char *payload, void *state) {
-  *(float *)state = atof(payload); // Convert payload to float
+  *(float *)state = atof(payload); // Convert payload string to float
   printf("Scale sensor value updated to: %.2f\n", *(float *)state);
 }
 

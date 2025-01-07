@@ -12,11 +12,15 @@ CONFIG_RESPONSE_TOPIC = "config/response"
 CONFIGURATIONS = {
     "coap_to_mqtt_01": {
         "lid_server_address": "fe80::202:2:2:2",
-        "compactor_server_address": "fe80::205:5:5:5"
+        "compactor_server_address": "fe80::205:5:5:5",
+        "scale_server_address": "fe80::208:8:8:8",
+        "waste_level_server_address": "fe80::209:9:9:9"
     },
     "coap_to_mqtt_02": {
         "lid_server_address": "fe80::203:3:3:3",
-        "compactor_server_address": "fe80::206:6:6:6"
+        "compactor_server_address": "fe80::206:6:6:6",
+        "scale_server_address": "fe80::210:10:10:10",
+        "waste_level_server_address": "fe80::211:11:11:11"
     }
     # Add more configurations as needed
 }
