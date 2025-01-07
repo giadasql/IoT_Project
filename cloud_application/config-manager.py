@@ -10,7 +10,7 @@ CONFIG_RESPONSE_TOPIC = "config/response"
 
 # Configuration data mapped by collector_id
 CONFIGURATIONS = {
-    "coap_to_mqtt_01": {
+    "fe80::204:4:4:4": {
         "lid_server_address": "fe80::202:2:2:2",
         "compactor_server_address": "fe80::205:5:5:5",
         "scale_server_address": "fe80::206:6:6:6",

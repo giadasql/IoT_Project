@@ -156,10 +156,10 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
         waste_level_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
         i++; // Skip the value token
     }
-
-    /* Verify and use the parsed data */
+  }
+      /* Verify and use the parsed data */
     if (strcmp(received_collector_id, local_ipv6_address) == 0) {
-      if (strcmp(received_collector_id, local_ipv6_address) == 0) {
+
   		printf("Received Lid Server Address: %s\n", lid_server_address);
   		printf("Received Compactor Server Address: %s\n", compactor_server_address);
         printf("Received Scale Server Address: %s\n", scale_server_address);
@@ -172,11 +172,9 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
         coap_endpoint_parse(waste_level_server_address, strlen(waste_level_server_address), &waste_level_server_endpoint);
 
   		state = STATE_CONFIG_RECEIVED;
-	}
     } else {
       printf("Response is not for this collector. Ignored.\n");
     }
-  }
 }
 }
 
@@ -346,7 +344,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
   		// Publish configuration request message
  		 snprintf(pub_msg, sizeof(pub_msg),
-           "{\"collector_id\":\"%s\",\"request\":[\"lid_server_address\", \"compactor_server_address\"]}",
+           "{\"collector_id\":\"%s\"}",
            local_ipv6_address);
 
  		 mqtt_status_t status = mqtt_publish(&conn, NULL, CONFIG_REQUEST_TOPIC,
