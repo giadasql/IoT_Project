@@ -248,7 +248,7 @@ static void client_callback_compactor_state(coap_message_t *response) {
 
 static void client_callback_scale_state(coap_message_t *response) {
     if (response) {
-        parse_payload(response->payload, "Scale Sensor", &collector_data.scale_sensor);
+        parse_payload(response->payload, "Scale Sensor", &collector_data.scale);
     } else {
         printf("CoAP request for Scale Sensor timed out.\n");
     }
@@ -273,15 +273,15 @@ static void send_aggregated_mqtt_message(void) {
              "{\"collector_id\":\"%s\","
              "\"lid_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
              "\"compactor_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
-             "\"scale_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
+             "\"scale\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
              "\"waste_level_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"}}",
              COLLECTOR_ID,
              collector_data.lid_sensor.value, collector_data.lid_sensor.time_updated,
              collector_data.compactor_sensor.value, collector_data.compactor_sensor.time_updated,
-             collector_data.scale_sensor.value, collector_data.scale_sensor.time_updated,
+             collector_data.scale.value, collector_data.scale.time_updated,
              collector_data.waste_level_sensor.value, collector_data.waste_level_sensor.time_updated);
 
-    mqtt_publish(&conn, NULL, PUB_TOPIC, (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+    mqtt_publish(&conn, NULL, "bins", (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
     printf("Published aggregated data to MQTT: %s\n", pub_msg);
 }
 
