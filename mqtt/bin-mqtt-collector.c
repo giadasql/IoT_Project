@@ -4,6 +4,7 @@
 #include "mqtt.h"
 #include "net/routing/routing.h"
 #include "net/ipv6/uip.h"
+#include "net/ipv6/uiplib.h"
 #include "sys/etimer.h"
 #include "sys/ctimer.h"
 #include "dev/leds.h"
@@ -22,8 +23,6 @@
 #define CONFIG_REQUEST_TOPIC "config/request"
 #define CONFIG_RESPONSE_TOPIC "config/response"
 
-/* Unique identifier for this collector */
-#define COLLECTOR_ID "coap_to_mqtt_01"
 
 /* CoAP variables */
 static coap_endpoint_t lid_server_endpoint;
@@ -36,6 +35,7 @@ static coap_message_t request[1];
 /* MQTT variables */
 static char client_id[64];
 static char pub_msg[1024];
+static char local_ipv6_address[64]; // Buffer for local IPv6 address
 static struct mqtt_connection conn;
 
 static uint8_t state;
@@ -67,6 +67,16 @@ static collector_data_t collector_data;
 
 PROCESS(coap_to_mqtt_process, "CoAP-to-MQTT Bridge");
 AUTOSTART_PROCESSES(&coap_to_mqtt_process);
+
+/* Helper Function: Get Local IPv6 Address */
+static void get_local_ipv6_address(char *buffer, size_t buffer_size) {
+    uip_ipaddr_t *ipaddr = uip_ds6_get_global(ADDR_PREFERRED);
+    if (ipaddr != NULL) {
+        uiplib_ipaddr_snprint(buffer, buffer_size, ipaddr);
+    } else {
+        snprintf(buffer, buffer_size, "unknown");
+    }
+}
 
 
 /* Helper Function: Check if a token equals a string */
@@ -140,8 +150,8 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
     }
 
     /* Verify and use the parsed data */
-    if (strcmp(received_collector_id, COLLECTOR_ID) == 0) {
-      if (strcmp(received_collector_id, COLLECTOR_ID) == 0) {
+    if (strcmp(received_collector_id, local_ipv6_address) == 0) {
+      if (strcmp(received_collector_id, local_ipv6_address) == 0) {
   		printf("Received Lid Server Address: %s\n", lid_server_address);
   		printf("Received Compactor Server Address: %s\n", compactor_server_address);
         printf("Received Scale Server Address: %s\n", scale_server_address);
@@ -270,12 +280,12 @@ static bool have_connectivity(void) {
 /* Publish Aggregated MQTT Message */
 static void send_aggregated_mqtt_message(void) {
     snprintf(pub_msg, sizeof(pub_msg),
-             "{\"collector_id\":\"%s\","
+             "{\"collector_address\":\"%s\","
              "\"lid_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
              "\"compactor_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
              "\"scale\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
              "\"waste_level_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"}}",
-             COLLECTOR_ID,
+             local_ipv6_address,
              collector_data.lid_sensor.value, collector_data.lid_sensor.time_updated,
              collector_data.compactor_sensor.value, collector_data.compactor_sensor.time_updated,
              collector_data.scale.value, collector_data.scale.time_updated,
@@ -295,6 +305,10 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
   mqtt_register(&conn, &coap_to_mqtt_process, client_id, mqtt_event, 128);
   state = STATE_INIT;
   etimer_set(&periodic_timer, CLOCK_SECOND * 10);
+
+  get_local_ipv6_address(local_ipv6_address, sizeof(local_ipv6_address));
+    printf("Local IPv6 Address: %s\n", local_ipv6_address);
+
 
   while(1) {
     PROCESS_YIELD();
@@ -325,7 +339,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
   		// Publish configuration request message
  		 snprintf(pub_msg, sizeof(pub_msg),
            "{\"collector_id\":\"%s\",\"request\":[\"lid_server_address\", \"compactor_server_address\"]}",
-           COLLECTOR_ID);
+           local_ipv6_address);
 
  		 mqtt_status_t status = mqtt_publish(&conn, NULL, CONFIG_REQUEST_TOPIC,
                                       (uint8_t *)pub_msg, strlen(pub_msg),
