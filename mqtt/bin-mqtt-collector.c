@@ -101,7 +101,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
   printf("Pub Handler: topic='%s' (len=%u), chunk_len=%u\n", topic, topic_len, chunk_len);
 
   if (strcmp(topic, CONFIG_RESPONSE_TOPIC) == 0) {
-    char received_collector_id[64] = {0};
+    char received_collector_address[64] = {0};
     char lid_server_address[64] = {0};
     char compactor_server_address[64] = {0};
     char scale_server_address[64] = {0};
@@ -128,10 +128,10 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
 
     /* Loop through all keys in the JSON object */
     for (int i = 1; i < token_count; i++) {
-      if (jsmn_token_equals((const char *)chunk, &tokens[i], "collector_id")) {
-        strncpy(received_collector_id, (const char *)chunk + tokens[i + 1].start,
+      if (jsmn_token_equals((const char *)chunk, &tokens[i], "collector_address")) {
+        strncpy(received_collector_address, (const char *)chunk + tokens[i + 1].start,
                 tokens[i + 1].end - tokens[i + 1].start);
-        received_collector_id[tokens[i + 1].end - tokens[i + 1].start] = '\0';
+        received_collector_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
         i++; // Skip the value token
       } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "lid_server_address")) {
         strncpy(lid_server_address, (const char *)chunk + tokens[i + 1].start,
@@ -158,7 +158,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
     }
   }
       /* Verify and use the parsed data */
-    if (strcmp(received_collector_id, local_ipv6_address) == 0) {
+    if (strcmp(received_collector_address, local_ipv6_address) == 0) {
 
   		printf("Received Lid Server Address: %s\n", lid_server_address);
   		printf("Received Compactor Server Address: %s\n", compactor_server_address);
@@ -344,7 +344,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
   		// Publish configuration request message
  		 snprintf(pub_msg, sizeof(pub_msg),
-           "{\"collector_id\":\"%s\"}",
+           "{\"collector_address\":\"%s\"}",
            local_ipv6_address);
 
  		 mqtt_status_t status = mqtt_publish(&conn, NULL, CONFIG_REQUEST_TOPIC,
