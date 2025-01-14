@@ -18,6 +18,35 @@ static coap_message_t request[1];
 // Actuator state
 static int compactor_state = 0; // 0: off, 1: on
 
+// Protothread variables
+static struct pt blocking_pt;
+
+// Function to send the CoAP PUT request in a protothread
+static PT_THREAD(send_compactor_state_update(struct pt *pt)) {
+    static const char *payload;
+
+    PT_BEGIN(pt);
+
+    // Check if the endpoint URI is configured
+    if (strlen(compactor_sensor_endpoint_uri) == 0) {
+        printf("Compactor sensor endpoint not configured. Skipping CoAP PUT.\n");
+        PT_EXIT(pt);
+    }
+
+    payload = compactor_state ? "true" : "false";
+
+    printf("Sending CoAP PUT to update compactor state: %s\n", payload);
+    coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+    coap_set_header_uri_path(request, "/compactor/active");
+    coap_set_payload(request, (uint8_t *)payload, strlen(payload));
+
+    // Perform the blocking request
+    COAP_BLOCKING_REQUEST(&compactor_sensor_endpoint, request, NULL);
+    printf("CoAP PUT request sent: %s\n", payload);
+
+    PT_END(pt);
+}
+
 // Function to handle button press duration
 static void handle_button_press_duration(button_hal_button_t *btn, clock_time_t duration) {
     printf("Button pressed for %lu ticks.\n", (unsigned long)duration);
@@ -30,21 +59,9 @@ static void handle_button_press_duration(button_hal_button_t *btn, clock_time_t 
         compactor_state = 1;
     }
 
-    // Send CoAP PUT to update the sensor
-    if (strlen(compactor_sensor_endpoint_uri) == 0) {
-        printf("Compactor sensor endpoint not configured. Skipping CoAP PUT.\n");
-        return;
-    }
-
-    const char *payload = compactor_state ? "true" : "false";
-
-    printf("Sending CoAP PUT to update compactor state: %s\n", payload);
-    coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-    coap_set_header_uri_path(request, "/compactor/active");
-    coap_set_payload(request, (uint8_t *)payload, strlen(payload));
-
-    COAP_BLOCKING_REQUEST(&compactor_sensor_endpoint, request, NULL);
-    printf("CoAP PUT request sent: %s\n", payload);
+    // Start the protothread to send the CoAP PUT request
+    PT_INIT(&blocking_pt);
+    PROCESS_PT_SPAWN(&blocking_pt, send_compactor_state_update(&blocking_pt));
 }
 
 // Button press event handler
