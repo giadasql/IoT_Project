@@ -1,9 +1,9 @@
 #include "contiki.h"
 #include "coap-engine.h"
 #include "dev/button-hal.h"
+#include "coap-blocking-api.h"
 #include <stdio.h>
 #include <string.h>
-#include "coap-blocking-api.h"
 
 // Define thresholds for short and long presses (in clock ticks)
 #define SHORT_PRESS_DURATION (CLOCK_SECOND * 1) // 1 second for short press
@@ -18,12 +18,15 @@ static coap_message_t request[1];
 // Actuator state
 static int compactor_state = 0; // 0: off, 1: on
 
-// Shared variable for CoAP PUT operation
+// Shared variables for CoAP PUT operation
 static int coap_put_pending = 0;
 static const char *coap_put_payload = NULL;
 
+// Timer to measure button press duration
+static struct timer button_timer;
+
 // Function to handle button press duration
-static void handle_button_press_duration(button_hal_button_t *btn, clock_time_t duration) {
+static void handle_button_press_duration(clock_time_t duration) {
     printf("Button pressed for %lu ticks.\n", (unsigned long)duration);
 
     if (duration < SHORT_PRESS_DURATION) {
@@ -46,11 +49,16 @@ static void handle_button_press_duration(button_hal_button_t *btn, clock_time_t 
 }
 
 // Button press event handler
-static void button_event_handler(button_hal_button_t *btn) {
-    if (btn->press_duration > 0) {
-        handle_button_press_duration(btn, btn->press_duration);
-    } else {
-        printf("Button press with unknown duration.\n");
+static void button_event_handler(button_hal_button_t *btn, button_hal_event_t event) {
+    if (event == BUTTON_HAL_PRESS_EVENT) {
+        // Start the timer when the button is pressed
+        timer_set(&button_timer, CLOCK_SECOND * 10); // Arbitrary max duration for long press
+        printf("Button press started.\n");
+    } else if (event == BUTTON_HAL_RELEASE_EVENT) {
+        // Measure the duration of the button press
+        clock_time_t duration = timer_expired(&button_timer) ? CLOCK_SECOND * 10 : timer_remaining(&button_timer);
+        handle_button_press_duration(duration);
+        printf("Button press ended.\n");
     }
 }
 
@@ -99,7 +107,9 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
         PROCESS_YIELD();
 
         if (ev == button_hal_press_event) {
-            button_event_handler((button_hal_button_t *)data);
+            button_event_handler((button_hal_button_t *)data, BUTTON_HAL_PRESS_EVENT);
+        } else if (ev == button_hal_release_event) {
+            button_event_handler((button_hal_button_t *)data, BUTTON_HAL_RELEASE_EVENT);
         }
 
         // Handle pending CoAP PUT request
