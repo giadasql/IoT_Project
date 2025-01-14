@@ -49,17 +49,17 @@ static void handle_button_press_duration(clock_time_t duration) {
 }
 
 // Button press event handler
-static void button_event_handler(button_hal_button_t *btn, button_hal_event_t event) {
-    if (event == BUTTON_HAL_PRESS_EVENT) {
+static void button_event_handler(button_hal_button_t *btn) {
         // Start the timer when the button is pressed
         timer_set(&button_timer, CLOCK_SECOND * 10); // Arbitrary max duration for long press
         printf("Button press started.\n");
-    } else if (event == BUTTON_HAL_RELEASE_EVENT) {
-        // Measure the duration of the button press
-        clock_time_t duration = timer_expired(&button_timer) ? CLOCK_SECOND * 10 : timer_remaining(&button_timer);
-        handle_button_press_duration(duration);
-        printf("Button press ended.\n");
-    }
+}
+
+static void button_release_handler(button_hal_button_t *btn) {
+    // Measure the duration of the button press
+    clock_time_t duration = timer_expired(&button_timer) ? CLOCK_SECOND * 10 : timer_remaining(&button_timer);
+    handle_button_press_duration(duration);
+    printf("Button press ended.\n");
 }
 
 // CoAP PUT handler to configure the compactor sensor endpoint
@@ -107,9 +107,9 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
         PROCESS_YIELD();
 
         if (ev == button_hal_press_event) {
-            button_event_handler((button_hal_button_t *)data, BUTTON_HAL_PRESS_EVENT);
+            button_event_handler((button_hal_button_t *)data);
         } else if (ev == button_hal_release_event) {
-            button_event_handler((button_hal_button_t *)data, BUTTON_HAL_RELEASE_EVENT);
+            button_release_handler((button_hal_button_t *)data);
         }
 
         // Handle pending CoAP PUT request
