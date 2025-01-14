@@ -98,19 +98,19 @@ jsmn_token_equals(const char *json, const jsmntok_t *tok, const char *key)
           strncmp(json + tok->start, key, tok->end - tok->start) == 0);
 }
 
-/* Function to configure the compactor actuator */
-static void configure_compactor_actuator(const char *actuator_uri) {
-    if (strlen(actuator_uri) == 0) {
-        printf("Compactor actuator URI is empty. Skipping configuration.\n");
+/* Function to send compactor sensor address to the actuator */
+static void send_compactor_config(const char *actuator_uri, const char *sensor_address) {
+    if (strlen(actuator_uri) == 0 || strlen(sensor_address) == 0) {
+        printf("Compactor actuator URI or sensor address is empty. Skipping configuration.\n");
         return;
     }
 
-    printf("Configuring compactor actuator with URI: %s\n", actuator_uri);
+    printf("Sending compactor sensor address to actuator: %s\n", actuator_uri);
 
     // Prepare the CoAP PUT request
     coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
     coap_set_header_uri_path(request, "actuator/compactor/config");
-    coap_set_payload(request, (uint8_t *)actuator_uri, strlen(actuator_uri));
+    coap_set_payload(request, (uint8_t *)sensor_address, strlen(sensor_address));
 
     // Send the CoAP request
     coap_endpoint_t actuator_endpoint;
@@ -133,6 +133,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
     char compactor_server_address[64] = {0};
     char scale_server_address[64] = {0};
     char waste_level_server_address[64] = {0};
+    char compactor_actuator_uri[64] = {0};
 
     jsmn_parser parser;
     jsmntok_t tokens[32]; // Adjust size based on expected tokens
@@ -187,6 +188,11 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
                 tokens[i + 1].end - tokens[i + 1].start);
         waste_level_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
         i++; // Skip the value token
+    } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "compactor_actuator_uri")) {
+        strncpy(compactor_actuator_uri, (const char *)chunk + tokens[i + 1].start,
+                tokens[i + 1].end - tokens[i + 1].start);
+        compactor_actuator_uri[tokens[i + 1].end - tokens[i + 1].start] = '\0';
+        i++; // Skip the value token
     }
   }
       /* Verify and use the parsed data */
@@ -203,9 +209,10 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
 		coap_endpoint_parse(compactor_server_address, strlen(compactor_server_address), &compactor_server_endpoint);
         coap_endpoint_parse(scale_server_address, strlen(scale_server_address), &scale_server_endpoint);
         coap_endpoint_parse(waste_level_server_address, strlen(waste_level_server_address), &waste_level_server_endpoint);
+        coap_endpoint_parse(compactor_actuator_uri, strlen(compactor_actuator_uri), &compactor_actuator_endpoint);
 
         // Configure compactor actuator
-        configure_compactor_actuator(compactor_server_address);
+        send_compactor_config(compactor_actuator_uri, compactor_sensor_address);
 
 
   		state = STATE_CONFIG_RECEIVED;
