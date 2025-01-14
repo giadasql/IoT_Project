@@ -133,7 +133,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
     char compactor_server_address[64] = {0};
     char scale_server_address[64] = {0};
     char waste_level_server_address[64] = {0};
-    char compactor_actuator_uri[64] = {0};
+    char compactor_actuator_endpoint[64] = {0};
 
     jsmn_parser parser;
     jsmntok_t tokens[32]; // Adjust size based on expected tokens
@@ -188,10 +188,10 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
                 tokens[i + 1].end - tokens[i + 1].start);
         waste_level_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
         i++; // Skip the value token
-    } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "compactor_actuator_uri")) {
-        strncpy(compactor_actuator_uri, (const char *)chunk + tokens[i + 1].start,
+    } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "compactor_actuator_address")) {
+        strncpy(compactor_actuator_endpoint, (const char *)chunk + tokens[i + 1].start,
                 tokens[i + 1].end - tokens[i + 1].start);
-        compactor_actuator_uri[tokens[i + 1].end - tokens[i + 1].start] = '\0';
+        compactor_actuator_endpoint[tokens[i + 1].end - tokens[i + 1].start] = '\0';
         i++; // Skip the value token
     }
   }
