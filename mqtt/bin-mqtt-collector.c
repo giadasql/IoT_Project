@@ -205,7 +205,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
         coap_endpoint_parse(waste_level_server_address, strlen(waste_level_server_address), &waste_level_server_endpoint);
 
         // Configure compactor actuator
-        configure_compactor_actuator(compactor_actuator_uri);
+        configure_compactor_actuator(compactor_server_address);
 
 
   		state = STATE_CONFIG_RECEIVED;
