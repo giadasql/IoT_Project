@@ -33,6 +33,10 @@ static coap_endpoint_t scale_server_endpoint;
 static coap_endpoint_t waste_level_server_endpoint;
 static coap_endpoint_t compactor_actuator_endpoint;
 
+static char compactor_actuator_uri[64] = {0};
+static char compactor_sensor_uri[64] = {0};
+static uint8_t send_compactor_config_flag = 0;
+
 static coap_message_t request[1];
 
 /* MQTT variables */
@@ -227,8 +231,10 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
         coap_endpoint_parse(waste_level_server_address, strlen(waste_level_server_address), &waste_level_server_endpoint);
         coap_endpoint_parse(compactor_actuator_address, strlen(compactor_actuator_address), &compactor_actuator_endpoint);
 
-        // Configure compactor actuator
-        send_compactor_config(compactor_actuator_address, compactor_server_address);
+        // Store compactor addresses and set flag
+      	strncpy(compactor_sensor_uri, compactor_server_address, sizeof(compactor_sensor_uri));
+     	 strncpy(compactor_actuator_uri, compactor_actuator_address, sizeof(compactor_actuator_uri));
+      	send_compactor_config_flag = 1;
 
 
   		state = STATE_CONFIG_RECEIVED;
@@ -425,6 +431,11 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
       if (state == STATE_CONFIG_RECEIVED) {
  		printf("Configuration received. Fetching CoAP data...\n");
+
+      if (send_compactor_config_flag) {
+        send_compactor_config(compactor_actuator_uri, compactor_sensor_uri);
+        send_compactor_config_flag = 0; // Reset flag
+      }
 
 	  if (state == STATE_CONFIG_RECEIVED) {
   			printf("Fetching Compactor State...\n");
