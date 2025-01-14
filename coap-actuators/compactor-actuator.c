@@ -18,34 +18,9 @@ static coap_message_t request[1];
 // Actuator state
 static int compactor_state = 0; // 0: off, 1: on
 
-// Protothread variables
-static struct pt blocking_pt;
-
-// Function to send the CoAP PUT request in a protothread
-static PT_THREAD(send_compactor_state_update(struct pt *pt)) {
-    static const char *payload;
-
-    PT_BEGIN(pt);
-
-    // Check if the endpoint URI is configured
-    if (strlen(compactor_sensor_endpoint_uri) == 0) {
-        printf("Compactor sensor endpoint not configured. Skipping CoAP PUT.\n");
-        PT_EXIT(pt);
-    }
-
-    payload = compactor_state ? "true" : "false";
-
-    printf("Sending CoAP PUT to update compactor state: %s\n", payload);
-    coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-    coap_set_header_uri_path(request, "/compactor/active");
-    coap_set_payload(request, (uint8_t *)payload, strlen(payload));
-
-    // Perform the blocking request
-    COAP_BLOCKING_REQUEST(&compactor_sensor_endpoint, request, NULL);
-    printf("CoAP PUT request sent: %s\n", payload);
-
-    PT_END(pt);
-}
+// Shared variable for CoAP PUT operation
+static int coap_put_pending = 0;
+static const char *coap_put_payload = NULL;
 
 // Function to handle button press duration
 static void handle_button_press_duration(button_hal_button_t *btn, clock_time_t duration) {
@@ -59,9 +34,15 @@ static void handle_button_press_duration(button_hal_button_t *btn, clock_time_t 
         compactor_state = 1;
     }
 
-    // Start the protothread to send the CoAP PUT request
-    PT_INIT(&blocking_pt);
-    PROCESS_PT_SPAWN(&blocking_pt, send_compactor_state_update(&blocking_pt));
+    // Prepare for CoAP PUT request
+    if (strlen(compactor_sensor_endpoint_uri) == 0) {
+        printf("Compactor sensor endpoint not configured. Skipping CoAP PUT.\n");
+        return;
+    }
+
+    coap_put_payload = compactor_state ? "true" : "false";
+    coap_put_pending = 1; // Signal to the main thread that a request is pending
+    printf("CoAP PUT request prepared with payload: %s\n", coap_put_payload);
 }
 
 // Button press event handler
@@ -98,7 +79,7 @@ static void configure_compactor_endpoint_handler(coap_message_t *request, coap_m
 RESOURCE(configure_compactor_endpoint, "title=\"Configure Compactor Endpoint\";rt=\"Text\"",
          NULL, configure_compactor_endpoint_handler, NULL, NULL);
 
-// Process to handle button events
+// Process to handle button events and CoAP PUT requests
 PROCESS(compactor_actuator_process, "Compactor Actuator");
 AUTOSTART_PROCESSES(&compactor_actuator_process);
 
@@ -119,6 +100,19 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
 
         if (ev == button_hal_press_event) {
             button_event_handler((button_hal_button_t *)data);
+        }
+
+        // Handle pending CoAP PUT request
+        if (coap_put_pending && coap_put_payload != NULL) {
+            printf("Sending CoAP PUT request to update compactor state: %s\n", coap_put_payload);
+            coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+            coap_set_header_uri_path(request, "/compactor/active");
+            coap_set_payload(request, (uint8_t *)coap_put_payload, strlen(coap_put_payload));
+
+            COAP_BLOCKING_REQUEST(&compactor_sensor_endpoint, request, NULL);
+            printf("CoAP PUT request sent: %s\n", coap_put_payload);
+
+            coap_put_pending = 0; // Clear the pending flag
         }
     }
 
