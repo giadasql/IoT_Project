@@ -213,7 +213,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
         coap_endpoint_parse(compactor_actuator_address, strlen(compactor_actuator_address), &compactor_actuator_endpoint);
 
         // Configure compactor actuator
-        send_compactor_config(compactor_actuator_endpoint, compactor_sensor_address);
+        send_compactor_config(compactor_actuator_endpoint, compactor_server_address);
 
 
   		state = STATE_CONFIG_RECEIVED;
