@@ -115,7 +115,7 @@ static void send_compactor_config(const char *actuator_uri, const char *sensor_a
     // Send the CoAP request
     coap_endpoint_t actuator_endpoint;
     if (coap_endpoint_parse(actuator_uri, strlen(actuator_uri), &actuator_endpoint)) {
-        COAP_BLOCKING_REQUEST(&actuator_endpoint, request, NULL);
+        //COAP_BLOCKING_REQUEST(&actuator_endpoint, request, NULL);
         printf("Compactor actuator configuration sent.\n");
     } else {
         printf("Failed to parse actuator URI: %s\n", actuator_uri);
