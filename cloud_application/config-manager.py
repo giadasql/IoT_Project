@@ -14,15 +14,9 @@ CONFIGURATIONS = {
         "lid_server_address": "fe80::202:2:2:2",
         "compactor_server_address": "fe80::205:5:5:5",
         "scale_server_address": "fe80::206:6:6:6",
-        "waste_level_server_address": "fe80::207:7:7:7"
-    },
-    "coap_to_mqtt_02": {
-        "lid_server_address": "fe80::203:3:3:3",
-        "compactor_server_address": "fe80::206:6:6:6",
-        "scale_server_address": "fe80::210:10:10:10",
-        "waste_level_server_address": "fe80::211:11:11:11"
+        "waste_level_server_address": "fe80::207:7:7:7",
+        "compactor_actuator_address": "fe80::208:8:8:8"
     }
-    # Add more configurations as needed
 }
 
 def on_connect(client, userdata, flags, rc):
@@ -38,11 +32,11 @@ def on_message(client, userdata, msg):
     try:
         # Parse the incoming request
         request = json.loads(msg.payload.decode())
-        collector_id = request.get("collector_id")
+        collector_id = request.get("collector_address")
 
         if collector_id and collector_id in CONFIGURATIONS:
             # Retrieve the appropriate configuration and add the collector_id
-            response = {"collector_id": collector_id}
+            response = {"collector_address": collector_id}
             response.update(CONFIGURATIONS[collector_id])
 
             # Publish the response
