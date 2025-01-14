@@ -411,7 +411,6 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
  		printf("Configuration received. Fetching CoAP data...\n");
 
       if (send_compactor_config_flag) {
-        send_compactor_config(compactor_actuator_uri, compactor_sensor_uri);
         if (strlen(compactor_actuator_uri) == 0 || strlen(compactor_sensor_uri) == 0) {
         	printf("Compactor actuator URI or sensor address is empty. Skipping configuration.\n");
         	return;
