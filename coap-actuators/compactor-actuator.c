@@ -18,24 +18,6 @@ static coap_message_t request[1];
 // Actuator state
 static int compactor_state = 0; // 0: off, 1: on
 
-// Function to update compactor sensor state via CoAP PUT
-static void update_compactor_sensor(int state) {
-    if (strlen(compactor_sensor_endpoint_uri) == 0) {
-        printf("Compactor sensor endpoint not configured. Skipping CoAP PUT.\n");
-        return;
-    }
-
-    const char *payload = state ? "true" : "false";
-
-    printf("Sending CoAP PUT to update compactor state: %s\n", payload);
-    coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-    coap_set_header_uri_path(request, "/compactor/active");
-    coap_set_payload(request, (uint8_t *)payload, strlen(payload));
-
-    COAP_BLOCKING_REQUEST(&compactor_sensor_endpoint, request, NULL);
-    printf("CoAP PUT request sent: %s\n", payload);
-}
-
 // Function to handle button press duration
 static void handle_button_press_duration(button_hal_button_t *btn, clock_time_t duration) {
     printf("Button pressed for %lu ticks.\n", (unsigned long)duration);
@@ -49,7 +31,20 @@ static void handle_button_press_duration(button_hal_button_t *btn, clock_time_t 
     }
 
     // Send CoAP PUT to update the sensor
-    update_compactor_sensor(compactor_state);
+    if (strlen(compactor_sensor_endpoint_uri) == 0) {
+        printf("Compactor sensor endpoint not configured. Skipping CoAP PUT.\n");
+        return;
+    }
+
+    const char *payload = compactor_state ? "true" : "false";
+
+    printf("Sending CoAP PUT to update compactor state: %s\n", payload);
+    coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+    coap_set_header_uri_path(request, "/compactor/active");
+    coap_set_payload(request, (uint8_t *)payload, strlen(payload));
+
+    COAP_BLOCKING_REQUEST(&compactor_sensor_endpoint, request, NULL);
+    printf("CoAP PUT request sent: %s\n", payload);
 }
 
 // Button press event handler
