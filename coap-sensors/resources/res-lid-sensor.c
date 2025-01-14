@@ -1,6 +1,7 @@
 #include "contiki.h"
 #include "coap-engine.h"
 #include "sensor_utils.h"
+#include "dev/leds.h" // Include LEDs header
 #include <stdio.h>
 #include <string.h>
 
@@ -41,7 +42,21 @@ static void lid_sensor_get_handler(coap_message_t *request, coap_message_t *resp
 
 static void lid_sensor_put_handler(coap_message_t *request, coap_message_t *response,
                                    uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
+  // Update the lid sensor state
   generic_put_handler(request, response, buffer, preferred_size, offset, &lid_sensor_data);
+
+  // Control the LEDs based on the updated state
+  if (lid_state == 1) {
+    // Lid is open - turn on green LED, turn off red LED
+    leds_on(LEDS_GREEN);
+    leds_off(LEDS_RED);
+    printf("Lid is open: Green LED ON, Red LED OFF\n");
+  } else {
+    // Lid is closed - turn on red LED, turn off green LED
+    leds_on(LEDS_RED);
+    leds_off(LEDS_GREEN);
+    printf("Lid is closed: Red LED ON, Green LED OFF\n");
+  }
 }
 
 // Define the CoAP resource

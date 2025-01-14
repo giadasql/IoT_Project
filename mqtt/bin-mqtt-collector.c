@@ -98,6 +98,30 @@ jsmn_token_equals(const char *json, const jsmntok_t *tok, const char *key)
           strncmp(json + tok->start, key, tok->end - tok->start) == 0);
 }
 
+/* Function to configure the compactor actuator */
+static void configure_compactor_actuator(const char *actuator_uri) {
+    if (strlen(actuator_uri) == 0) {
+        printf("Compactor actuator URI is empty. Skipping configuration.\n");
+        return;
+    }
+
+    printf("Configuring compactor actuator with URI: %s\n", actuator_uri);
+
+    // Prepare the CoAP PUT request
+    coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+    coap_set_header_uri_path(request, "actuator/compactor/config");
+    coap_set_payload(request, (uint8_t *)actuator_uri, strlen(actuator_uri));
+
+    // Send the CoAP request
+    coap_endpoint_t actuator_endpoint;
+    if (coap_endpoint_parse(actuator_uri, strlen(actuator_uri), &actuator_endpoint)) {
+        COAP_BLOCKING_REQUEST(&actuator_endpoint, request, NULL);
+        printf("Compactor actuator configuration sent.\n");
+    } else {
+        printf("Failed to parse actuator URI: %s\n", actuator_uri);
+    }
+}
+
 /* Publish Handler */
 static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk, uint16_t chunk_len) {
   printf("Pub Handler: topic='%s' (len=%u), chunk_len=%u\n", topic, topic_len, chunk_len);
@@ -167,7 +191,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
   }
       /* Verify and use the parsed data */
     if (strcmp(received_collector_address, local_ipv6_address) == 0) {
-
+		printf("Received configuration for Bin ID: %s\n", received_bin_id);
   		printf("Received Lid Server Address: %s\n", lid_server_address);
   		printf("Received Compactor Server Address: %s\n", compactor_server_address);
         printf("Received Scale Server Address: %s\n", scale_server_address);
@@ -179,6 +203,10 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
 		coap_endpoint_parse(compactor_server_address, strlen(compactor_server_address), &compactor_server_endpoint);
         coap_endpoint_parse(scale_server_address, strlen(scale_server_address), &scale_server_endpoint);
         coap_endpoint_parse(waste_level_server_address, strlen(waste_level_server_address), &waste_level_server_endpoint);
+
+        // Configure compactor actuator
+        configure_compactor_actuator(compactor_actuator_uri);
+
 
   		state = STATE_CONFIG_RECEIVED;
     } else {
