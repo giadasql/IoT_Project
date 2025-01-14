@@ -118,29 +118,7 @@ client_chunk_handler(coap_message_t *response)
   printf("|%.*s", len, (char *)chunk);
 }
 
-/* Function to send compactor sensor address to the actuator */
-static void send_compactor_config(const char *actuator_uri, const char *sensor_address) {
-    if (strlen(actuator_uri) == 0 || strlen(sensor_address) == 0) {
-        printf("Compactor actuator URI or sensor address is empty. Skipping configuration.\n");
-        return;
-    }
 
-    printf("Sending compactor sensor address to actuator: %s\n", actuator_uri);
-
-    // Prepare the CoAP PUT request
-    coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-    coap_set_header_uri_path(request, "actuator/compactor/config");
-    coap_set_payload(request, (uint8_t *)sensor_address, strlen(sensor_address));
-
-    // Send the CoAP request
-    coap_endpoint_t actuator_endpoint;
-    if (coap_endpoint_parse(actuator_uri, strlen(actuator_uri), &actuator_endpoint)) {
-        COAP_BLOCKING_REQUEST(&actuator_endpoint, request, client_chunk_handler);
-        printf("Compactor actuator configuration sent.\n");
-    } else {
-        printf("Failed to parse actuator URI: %s\n", actuator_uri);
-    }
-}
 
 /* Publish Handler */
 static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk, uint16_t chunk_len) {
@@ -434,6 +412,26 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
       if (send_compactor_config_flag) {
         send_compactor_config(compactor_actuator_uri, compactor_sensor_uri);
+        if (strlen(compactor_actuator_uri) == 0 || strlen(compactor_sensor_uri) == 0) {
+        	printf("Compactor actuator URI or sensor address is empty. Skipping configuration.\n");
+        	return;
+    	}
+
+   		printf("Sending compactor sensor address to actuator: %s\n", compactor_actuator_uri);
+
+    	// Prepare the CoAP PUT request
+    	coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+    	coap_set_header_uri_path(request, "actuator/compactor/config");
+   		coap_set_payload(request, (uint8_t *)compactor_sensor_uri, strlen(compactor_sensor_uri));
+
+    	// Send the CoAP request
+    	coap_endpoint_t actuator_endpoint;
+    	if (coap_endpoint_parse(compactor_actuator_uri, strlen(compactor_actuator_uri), &actuator_endpoint)) {
+        	COAP_BLOCKING_REQUEST(&actuator_endpoint, request, client_chunk_handler);
+        	printf("Compactor actuator configuration sent.\n");
+    	} else {
+        	printf("Failed to parse actuator URI: %s\n", compactor_actuator_uri);
+    	}
         send_compactor_config_flag = 0; // Reset flag
       }
 
