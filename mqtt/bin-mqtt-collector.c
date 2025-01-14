@@ -413,25 +413,26 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
       if (send_compactor_config_flag) {
         if (strlen(compactor_actuator_uri) == 0 || strlen(compactor_sensor_uri) == 0) {
         	printf("Compactor actuator URI or sensor address is empty. Skipping configuration.\n");
-        	return;
     	}
+        else {
 
-   		printf("Sending compactor sensor address to actuator: %s\n", compactor_actuator_uri);
+   			printf("Sending compactor sensor address to actuator: %s\n", compactor_actuator_uri);
 
-    	// Prepare the CoAP PUT request
-    	coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-    	coap_set_header_uri_path(request, "actuator/compactor/config");
-   		coap_set_payload(request, (uint8_t *)compactor_sensor_uri, strlen(compactor_sensor_uri));
+    		// Prepare the CoAP PUT request
+    		coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+    		coap_set_header_uri_path(request, "actuator/compactor/config");
+   			coap_set_payload(request, (uint8_t *)compactor_sensor_uri, strlen(compactor_sensor_uri));
 
-    	// Send the CoAP request
-    	coap_endpoint_t actuator_endpoint;
-    	if (coap_endpoint_parse(compactor_actuator_uri, strlen(compactor_actuator_uri), &actuator_endpoint)) {
-        	COAP_BLOCKING_REQUEST(&actuator_endpoint, request, client_chunk_handler);
-        	printf("Compactor actuator configuration sent.\n");
-    	} else {
-        	printf("Failed to parse actuator URI: %s\n", compactor_actuator_uri);
-    	}
-        send_compactor_config_flag = 0; // Reset flag
+    		// Send the CoAP request
+    		coap_endpoint_t actuator_endpoint;
+    		if (coap_endpoint_parse(compactor_actuator_uri, strlen(compactor_actuator_uri), &actuator_endpoint)) {
+        		COAP_BLOCKING_REQUEST(&actuator_endpoint, request, client_chunk_handler);
+        		printf("Compactor actuator configuration sent.\n");
+    		} else {
+        		printf("Failed to parse actuator URI: %s\n", compactor_actuator_uri);
+    		}
+        	send_compactor_config_flag = 0; // Reset flag
+        }
       }
 
 	  if (state == STATE_CONFIG_RECEIVED) {
