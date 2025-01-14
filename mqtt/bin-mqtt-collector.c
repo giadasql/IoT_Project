@@ -99,6 +99,21 @@ jsmn_token_equals(const char *json, const jsmntok_t *tok, const char *key)
           strncmp(json + tok->start, key, tok->end - tok->start) == 0);
 }
 
+void
+client_chunk_handler(coap_message_t *response)
+{
+  const uint8_t *chunk;
+
+  if(response == NULL) {
+    puts("Request timed out");
+    return;
+  }
+
+  int len = coap_get_payload(response, &chunk);
+
+  printf("|%.*s", len, (char *)chunk);
+}
+
 /* Function to send compactor sensor address to the actuator */
 static void send_compactor_config(const char *actuator_uri, const char *sensor_address) {
     if (strlen(actuator_uri) == 0 || strlen(sensor_address) == 0) {
@@ -116,7 +131,7 @@ static void send_compactor_config(const char *actuator_uri, const char *sensor_a
     // Send the CoAP request
     coap_endpoint_t actuator_endpoint;
     if (coap_endpoint_parse(actuator_uri, strlen(actuator_uri), &actuator_endpoint)) {
-        COAP_BLOCKING_REQUEST(&actuator_endpoint, request, NULL);
+        COAP_BLOCKING_REQUEST(&actuator_endpoint, request, client_chunk_handler);
         printf("Compactor actuator configuration sent.\n");
     } else {
         printf("Failed to parse actuator URI: %s\n", actuator_uri);
