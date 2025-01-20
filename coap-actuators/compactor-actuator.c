@@ -2,7 +2,7 @@
 #include "coap-engine.h"
 #include "dev/button-hal.h"
 #include "coap-blocking-api.h"
-#include "res-compactor-configuration.c"
+#include "res-compactor-configuration.h"
 #include <stdio.h>
 #include <string.h>
 
