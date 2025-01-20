@@ -6,7 +6,7 @@
 #include <string.h>
 
 // Scale sensor state
-static float scale_value = 0.0; // Initial weight value
+static float scale_value = 32.0; // Initial weight value
 
 // Conversion functions for the scale sensor
 static void scale_value_to_string(char *buffer, size_t size, void *state) {
