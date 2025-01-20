@@ -34,4 +34,4 @@ static void compactor_sensor_endpoint_put_handler(coap_message_t *request, coap_
 
 // CoAP resource for configuring the endpoint
 RESOURCE(compactor_sensor_endpoint, "title=\"Configure Compactor Endpoint\";rt=\"Text\"",
-         NULL, configure_compactor_endpoint_handler, NULL, NULL);
+         NULL, compactor_sensor_endpoint_put_handler, NULL, NULL);
