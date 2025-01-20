@@ -44,7 +44,7 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
     button_hal_init();
 
     while (1) {
-        PROCESS_YIELD();
+        PROCESS_WAIT_EVENT();
 
         if (ev == button_hal_press_event) {
             button_event_handler((button_hal_button_t *)data);
