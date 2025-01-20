@@ -8,7 +8,7 @@
 // Shared variables for CoAP PUT operation
 static int coap_put_pending = 0;
 
-extern coap_resource_t res_configure_compactor_endpoint;
+extern coap_resource_t compactor_sensor_endpoint;
 
 // Button press event handler
 static void button_event_handler(button_hal_button_t *btn) {
@@ -38,7 +38,7 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
 
     // Register the CoAP resource
 
-    coap_activate_resource(&res_configure_compactor_endpoint, "actuator/compactor/config");
+    coap_activate_resource(&compactor_sensor_endpoint, "actuator/compactor/config");
 
     // Initialize button-hal
     button_hal_init();
