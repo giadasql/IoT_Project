@@ -5,11 +5,12 @@
 #include <stdio.h>
 #include <string.h>
 
+// External getter functions
+extern const char *get_compactor_sensor_endpoint_uri(void);
+extern const coap_endpoint_t *get_compactor_sensor_address(void);
+
 // Shared variables for CoAP PUT operation
 static int coap_put_pending = 0;
-
-extern coap_resource_t compactor_sensor_endpoint;
-extern coap_endpoint_t compactor_sensor_address;
 
 // Button press event handler
 static void button_event_handler(button_hal_button_t *btn) {
@@ -17,12 +18,10 @@ static void button_event_handler(button_hal_button_t *btn) {
     printf("CoAP PUT request prepared to turn compactor ON.\n");
 }
 
-void
-client_chunk_handler(coap_message_t *response)
-{
+void client_chunk_handler(coap_message_t *response) {
     const uint8_t *chunk;
 
-    if(response == NULL) {
+    if (response == NULL) {
         puts("Request timed out");
         return;
     }
@@ -40,10 +39,10 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
 {
     PROCESS_BEGIN();
 
-    printf("Compactor Actuator Process started 2.\n");
+    printf("Compactor Actuator Process started.\n");
 
     // Register the CoAP resource
-
+    extern coap_resource_t compactor_sensor_endpoint;
     coap_activate_resource(&compactor_sensor_endpoint, "compactor/config");
 
     // Initialize button-hal
@@ -59,15 +58,23 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
         // Handle pending CoAP PUT request
         if (coap_put_pending) {
             printf("Sending CoAP PUT request to turn compactor ON.\n");
-            static coap_message_t request[1];
-            // Prepare the CoAP PUT request
-            coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-            coap_set_header_uri_path(request, "/compactor/active");
-            coap_set_payload(request, (uint8_t *)"true", strlen("true"));
 
-            // Send the CoAP request
-            COAP_BLOCKING_REQUEST(&compactor_sensor_address, request, client_chunk_handler);
-            printf("CoAP PUT request sent to turn compactor ON.\n");
+            const coap_endpoint_t *compactor_address = get_compactor_sensor_address();
+            const char *compactor_uri = get_compactor_sensor_endpoint_uri();
+
+            if (strlen(compactor_uri) == 0) {
+                printf("Compactor sensor endpoint not configured. Aborting request.\n");
+            } else {
+                static coap_message_t request[1];
+                // Prepare the CoAP PUT request
+                coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+                coap_set_header_uri_path(request, "/compactor/active");
+                coap_set_payload(request, (uint8_t *)"true", strlen("true"));
+
+                // Send the CoAP request
+                COAP_BLOCKING_REQUEST(compactor_address, request, client_chunk_handler);
+                printf("CoAP PUT request sent to turn compactor ON.\n");
+            }
 
             coap_put_pending = 0; // Clear the pending flag
         }

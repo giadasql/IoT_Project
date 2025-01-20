@@ -8,6 +8,11 @@
 static char compactor_sensor_endpoint_uri[64] = ""; // Buffer to store endpoint URI
 static coap_endpoint_t compactor_sensor_address;
 
+// Getter for the parsed address
+const coap_endpoint_t *get_compactor_sensor_address(void) {
+    return &compactor_sensor_address;
+}
+
 
 // CoAP PUT handler to configure the compactor sensor endpoint
 static void compactor_sensor_endpoint_put_handler(coap_message_t *request, coap_message_t *response,
