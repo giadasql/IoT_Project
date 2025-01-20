@@ -59,7 +59,7 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
         if (coap_put_pending) {
             printf("Sending CoAP PUT request to turn compactor ON.\n");
 
-            const coap_endpoint_t compactor_address = get_compactor_sensor_address();
+            //const coap_endpoint_t compactor_address = get_compactor_sensor_address();
             const char *compactor_uri = get_compactor_sensor_endpoint_uri();
 
             if (strlen(compactor_uri) == 0) {
