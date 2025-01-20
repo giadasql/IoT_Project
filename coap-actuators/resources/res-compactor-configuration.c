@@ -9,6 +9,7 @@ static coap_endpoint_t compactor_sensor_endpoint;
 static char compactor_sensor_endpoint_uri[64] = "test"; // Buffer to store endpoint URI
 
 coap_endpoint_t *get_compactor_sensor_endpoint(void) {
+    printf("Returning compactor sensor endpoint.\n");
     return &compactor_sensor_endpoint;
 }
 
