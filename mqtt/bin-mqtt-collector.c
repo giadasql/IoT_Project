@@ -200,6 +200,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
   		printf("Received Compactor Server Address: %s\n", compactor_server_address);
         printf("Received Scale Server Address: %s\n", scale_server_address);
 		printf("Received Waste Level Server Address: %s\n", waste_level_server_address);
+        printf("Received Compactor Actuator Address: %s\n", compactor_actuator_address);
 
   		// Parse the CoAP server addresses
         strncpy(bin_id, received_bin_id, sizeof(bin_id));
