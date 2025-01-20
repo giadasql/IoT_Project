@@ -5,7 +5,7 @@
 #include <string.h>
 
 // CoAP server endpoint for the compactor sensor
-static char compactor_sensor_endpoint_uri[64] = ""; // Buffer to store endpoint URI
+char compactor_sensor_endpoint_uri[64] = ""; // Buffer to store endpoint URI
 coap_endpoint_t compactor_sensor_address;
 
 // CoAP PUT handler to configure the compactor sensor endpoint

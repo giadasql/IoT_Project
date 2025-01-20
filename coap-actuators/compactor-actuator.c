@@ -7,6 +7,7 @@
 
 extern coap_resource_t compactor_sensor_endpoint;
 extern coap_endpoint_t compactor_sensor_address;
+extern char compactor_sensor_endpoint_uri[64];
 
 
 
@@ -61,7 +62,7 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
 
             //const coap_endpoint_t compactor_address = get_compactor_sensor_address();
 
-            if (strlen(compactor_uri) == 0) {
+            if (strlen(compactor_sensor_endpoint_uri) == 0) {
                 printf("Compactor sensor endpoint not configured. Aborting request.\n");
             } else {
                 static coap_message_t request[1];
