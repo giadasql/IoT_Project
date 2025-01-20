@@ -471,7 +471,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
       }
 
 	  if (state == STATE_CONFIG_RECEIVED) {
-            printf("Reading compactor actuator address from actuator: %s\n", compactor_actuator_endpoint);
+            printf("Reading compactor actuator address from actuator: %s\n", compactor_actuator_uri);
 
             // Prepare CoAP GET request to read configuration
             coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
