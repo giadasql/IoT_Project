@@ -2,6 +2,7 @@
 #include "coap-engine.h"
 #include "dev/button-hal.h"
 #include "coap-blocking-api.h"
+#include "res-compactor-configuration.c"
 #include <stdio.h>
 #include <string.h>
 
@@ -15,7 +16,7 @@ static void button_event_handler(button_hal_button_t *btn) {
     printf("Button pressed. Turning compactor ON.\n");
 
     // Prepare for CoAP PUT request
-    const char *endpoint_uri = res_configure_compactor_endpoint;
+    const char *endpoint_uri = get_compactor_sensor_endpoint_uri();
     if (strlen(endpoint_uri) == 0) {
         printf("Compactor sensor endpoint not configured. Skipping CoAP PUT.\n");
         return;
