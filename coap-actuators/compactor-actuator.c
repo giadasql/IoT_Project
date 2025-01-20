@@ -60,18 +60,13 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
         if (coap_put_pending) {
             printf("Sending CoAP PUT request to turn compactor ON.\n");
             static coap_message_t request[1];
+            // Prepare the CoAP PUT request
             coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
             coap_set_header_uri_path(request, "/compactor/active");
             coap_set_payload(request, (uint8_t *)"true", strlen("true"));
 
-            // check if the compactor_sensor_address is defined
-            // if not, print an error message
-            if (compactor_sensor_address.port == 0) {
-                printf("Error: Compactor sensor address is not defined.\n");
-                continue;
-            }
-
-            COAP_BLOCKING_REQUEST(compactor_sensor_address, request, client_chunk_handler);
+            // Send the CoAP request
+            COAP_BLOCKING_REQUEST(&compactor_sensor_address, request, client_chunk_handler);
             printf("CoAP PUT request sent to turn compactor ON.\n");
 
             coap_put_pending = 0; // Clear the pending flag
