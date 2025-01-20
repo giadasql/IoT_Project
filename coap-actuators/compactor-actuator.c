@@ -8,12 +8,14 @@
 // Shared variables for CoAP PUT operation
 static int coap_put_pending = 0;
 
+extern coap_resource_t res_configure_compactor_endpoint;
+
 // Button press event handler
 static void button_event_handler(button_hal_button_t *btn) {
     printf("Button pressed. Turning compactor ON.\n");
 
     // Prepare for CoAP PUT request
-    const char *endpoint_uri = get_compactor_sensor_endpoint_uri();
+    const char *endpoint_uri = res_configure_compactor_endpoint;
     if (strlen(endpoint_uri) == 0) {
         printf("Compactor sensor endpoint not configured. Skipping CoAP PUT.\n");
         return;
@@ -34,7 +36,7 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
     printf("Compactor Actuator Process started.\n");
 
     // Register the CoAP resource
-    extern coap_resource_t res_configure_compactor_endpoint;
+
     coap_activate_resource(&res_configure_compactor_endpoint, "actuator/compactor/config");
 
     // Initialize button-hal
