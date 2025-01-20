@@ -17,6 +17,21 @@ static void button_event_handler(button_hal_button_t *btn) {
     printf("CoAP PUT request prepared to turn compactor ON.\n");
 }
 
+void
+client_chunk_handler(coap_message_t *response)
+{
+    const uint8_t *chunk;
+
+    if(response == NULL) {
+        puts("Request timed out");
+        return;
+    }
+
+    int len = coap_get_payload(response, &chunk);
+
+    printf("|%.*s\n", len, (char *)chunk);
+}
+
 // Process to handle button events and CoAP PUT requests
 PROCESS(compactor_actuator_process, "Compactor Actuator");
 AUTOSTART_PROCESSES(&compactor_actuator_process);
@@ -56,7 +71,7 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
                 continue;
             }
 
-            COAP_BLOCKING_REQUEST(compactor_sensor_address, request, NULL);
+            COAP_BLOCKING_REQUEST(compactor_sensor_address, request, client_chunk_handler);
             printf("CoAP PUT request sent to turn compactor ON.\n");
 
             coap_put_pending = 0; // Clear the pending flag
