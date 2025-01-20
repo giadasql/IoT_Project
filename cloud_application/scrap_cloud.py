@@ -37,6 +37,7 @@ def load_config_from_xml(xml_file):
             "compactor_server_address": bin_element.find("compactor_server_address").text,
             "scale_server_address": bin_element.find("scale_server_address").text,
             "waste_level_server_address": bin_element.find("waste_level_server_address").text,
+            "compactor_actuator_address": bin_element.find("compactor_actuator_address").text
         }
     print(f"Loaded configuration for {len(bins_config)} bins.")
 

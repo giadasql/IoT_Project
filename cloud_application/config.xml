@@ -5,5 +5,6 @@
         <compactor_server_address>fe80::205:5:5:5</compactor_server_address>
         <scale_server_address>fe80::206:6:6:6</scale_server_address>
         <waste_level_server_address>fe80::207:7:7:7</waste_level_server_address>
+        <compactor_actuator_address>fe80::208:8:8:8</compactor_actuator_address>
     </bin>
 </bins>

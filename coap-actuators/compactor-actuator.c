@@ -32,6 +32,8 @@ static void button_event_handler(button_hal_button_t *btn) {
 // CoAP PUT handler to configure the compactor sensor endpoint
 static void configure_compactor_endpoint_handler(coap_message_t *request, coap_message_t *response,
                                                   uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
+    printf("CoAP handler invoked with payload: %s\n", buffer);
+
     size_t len = coap_get_payload(request, (const uint8_t **)&buffer);
     if (len > 0 && len < sizeof(compactor_sensor_endpoint_uri)) {
         strncpy(compactor_sensor_endpoint_uri, (char *)buffer, len);

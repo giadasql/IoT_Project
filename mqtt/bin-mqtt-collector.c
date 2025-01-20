@@ -115,7 +115,7 @@ client_chunk_handler(coap_message_t *response)
 
   int len = coap_get_payload(response, &chunk);
 
-  printf("|%.*s", len, (char *)chunk);
+  printf("|%.*s\n", len, (char *)chunk);
 }
 
 
@@ -422,6 +422,9 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
     		coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
     		coap_set_header_uri_path(request, "/actuator/compactor/config");
    			coap_set_payload(request, (uint8_t *)compactor_sensor_uri, strlen(compactor_sensor_uri));
+
+            printf("Payload being sent to actuator: %s\n", compactor_sensor_uri);
+
 
     		// Send the CoAP request
     		coap_endpoint_t actuator_endpoint;
