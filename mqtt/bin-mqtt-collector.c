@@ -32,10 +32,15 @@ static coap_endpoint_t compactor_server_endpoint;
 static coap_endpoint_t scale_server_endpoint;
 static coap_endpoint_t waste_level_server_endpoint;
 static coap_endpoint_t compactor_actuator_endpoint;
+static coap_endpoint_t lid_actuator_endpoint;
 
 static char compactor_actuator_uri[64] = {0};
 static char compactor_sensor_uri[64] = {0};
-static uint8_t send_compactor_config_flag = 0;
+static char lid_actuator_uri[64] = {0};
+static char lid_sensor_uri[64] = {0};
+static char waste_level_sensor_uri[64] = {0};
+static char scale_sensor_uri[64] = {0};
+static uint8_t send_config_flag = 0;
 
 static coap_message_t request[1];
 
@@ -132,6 +137,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
     char scale_server_address[64] = {0};
     char waste_level_server_address[64] = {0};
     char compactor_actuator_address[64] = {0};
+    char lid_actuator_address[64] = {0};
 
     jsmn_parser parser;
     jsmntok_t tokens[32]; // Adjust size based on expected tokens
@@ -191,6 +197,11 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
                 tokens[i + 1].end - tokens[i + 1].start);
         compactor_actuator_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
         i++; // Skip the value token
+    } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "lid_actuator_address")) {
+        strncpy(lid_actuator_address, (const char *)chunk + tokens[i + 1].start,
+                tokens[i + 1].end - tokens[i + 1].start);
+        lid_actuator_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
+        i++; // Skip the value token
     }
   }
       /* Verify and use the parsed data */
@@ -201,6 +212,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
         printf("Received Scale Server Address: %s\n", scale_server_address);
 		printf("Received Waste Level Server Address: %s\n", waste_level_server_address);
         printf("Received Compactor Actuator Address: %s\n", compactor_actuator_address);
+        printf("Received Lid Actuator Address: %s\n", lid_actuator_address);
 
   		// Parse the CoAP server addresses
         strncpy(bin_id, received_bin_id, sizeof(bin_id));
@@ -209,11 +221,18 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
         coap_endpoint_parse(scale_server_address, strlen(scale_server_address), &scale_server_endpoint);
         coap_endpoint_parse(waste_level_server_address, strlen(waste_level_server_address), &waste_level_server_endpoint);
         coap_endpoint_parse(compactor_actuator_address, strlen(compactor_actuator_address), &compactor_actuator_endpoint);
+        coap_endpoint_parse(lid_actuator_address, strlen(lid_actuator_address), &lid_actuator_endpoint);
+        
 
         // Store compactor addresses and set flag
       	strncpy(compactor_sensor_uri, compactor_server_address, sizeof(compactor_sensor_uri));
-     	 strncpy(compactor_actuator_uri, compactor_actuator_address, sizeof(compactor_actuator_uri));
-      	send_compactor_config_flag = 1;
+     	strncpy(compactor_actuator_uri, compactor_actuator_address, sizeof(compactor_actuator_uri));
+        strncpy(lid_sensor_uri, lid_server_address, sizeof(lid_sensor_uri));
+        strncpy(lid_actuator_uri, lid_actuator_address, sizeof(lid_actuator_uri));
+        strncpy(scale_sensor_uri, scale_server_address, sizeof(scale_sensor_uri));
+        strncpy(waste_level_sensor_uri, waste_level_server_address, sizeof(waste_level_sensor_uri));
+
+      	send_config_flag = 1;
 
 
   		state = STATE_CONFIG_RECEIVED;
@@ -432,26 +451,11 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
       if (state == STATE_CONFIG_RECEIVED) {
  		printf("Configuration received. Fetching CoAP data...\n");
 
-      if (send_compactor_config_flag) {
+      if (send_config_flag) {
         if (strlen(compactor_actuator_uri) == 0 || strlen(compactor_sensor_uri) == 0) {
         	printf("Compactor actuator URI or sensor address is empty. Skipping configuration.\n");
     	}
         else {
-
-            printf("Reading compactor actuator address from actuator: %s\n", compactor_actuator_uri);
-
-            // Prepare CoAP GET request to read configuration
-            coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-            coap_set_header_uri_path(request, "/compactor/config");
-
-            coap_endpoint_t actuator_endpoint;
-            if (coap_endpoint_parse(compactor_actuator_uri, strlen(compactor_actuator_uri), &actuator_endpoint)) {
-                COAP_BLOCKING_REQUEST(&actuator_endpoint, request, compactor_config_read_callback);
-                printf("Compactor configuration read request sent.\n");
-            } else {
-                printf("Failed to parse actuator URI: %s\n", compactor_actuator_uri);
-            }
-
    			printf("Sending compactor sensor address to actuator: %s\n", compactor_actuator_uri);
 
     		// Prepare the CoAP PUT request
@@ -461,12 +465,24 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
             printf("Payload being sent to actuator: %s\n", compactor_sensor_uri);
 
-
     		// Send the CoAP request
-        		COAP_BLOCKING_REQUEST(&compactor_actuator_endpoint, request, client_chunk_handler);
-        		printf("Compactor actuator configuration sent.\n");
+        	COAP_BLOCKING_REQUEST(&compactor_actuator_endpoint, request, client_chunk_handler);
+        	printf("Compactor actuator configuration sent.\n");
 
-        	send_compactor_config_flag = 0; // Reset flag
+            printf("Sending lid sensor address to actuator: %s\n", lid_actuator_uri);
+
+            // Prepare the CoAP PUT request
+            coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+            coap_set_header_uri_path(request, "/lid/config");
+            coap_set_payload(request, (uint8_t *)lid_sensor_uri, strlen(lid_sensor_uri));
+
+            printf("Payload being sent to actuator: %s\n", lid_sensor_uri);
+
+            // Send the CoAP request
+            COAP_BLOCKING_REQUEST(&lid_actuator_endpoint, request, client_chunk_handler);
+            printf("Lid actuator configuration sent.\n");
+
+        	send_config_flag = 0; // Reset flag
         }
       }
 
