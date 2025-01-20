@@ -350,7 +350,6 @@ static void send_aggregated_mqtt_message(void) {
 
 /* Global Variables */
 static char received_compactor_config[64] = {0}; // Buffer to store the current compactor config
-static uint8_t read_config_flag = 0; // Flag to indicate the configuration should be read first
 
 
 /* Callback Function for Reading Compactor Config */
