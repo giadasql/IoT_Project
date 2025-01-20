@@ -5,9 +5,10 @@
 #include <stdio.h>
 #include <string.h>
 
-// External getter functions
-extern const char *get_compactor_sensor_endpoint_uri(void);
-extern const coap_endpoint_t get_compactor_sensor_address(void);
+extern coap_resource_t compactor_sensor_endpoint;
+extern coap_endpoint_t compactor_sensor_address;
+
+
 
 // Shared variables for CoAP PUT operation
 static int coap_put_pending = 0;
@@ -42,7 +43,6 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
     printf("Compactor Actuator Process started.\n");
 
     // Register the CoAP resource
-    extern coap_resource_t compactor_sensor_endpoint;
     coap_activate_resource(&compactor_sensor_endpoint, "compactor/config");
 
     // Initialize button-hal
@@ -60,7 +60,6 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
             printf("Sending CoAP PUT request to turn compactor ON.\n");
 
             //const coap_endpoint_t compactor_address = get_compactor_sensor_address();
-            const char *compactor_uri = get_compactor_sensor_endpoint_uri();
 
             if (strlen(compactor_uri) == 0) {
                 printf("Compactor sensor endpoint not configured. Aborting request.\n");
@@ -72,7 +71,7 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
                 coap_set_payload(request, (uint8_t *)"true", strlen("true"));
 
                 // Send the CoAP request
-                //COAP_BLOCKING_REQUEST(&compactor_address, request, client_chunk_handler);
+                COAP_BLOCKING_REQUEST(&compactor_sensor_address, request, client_chunk_handler);
                 printf("CoAP PUT request sent to turn compactor ON.\n");
             }
 
