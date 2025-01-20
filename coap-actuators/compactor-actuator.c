@@ -2,7 +2,6 @@
 #include "coap-engine.h"
 #include "dev/button-hal.h"
 #include "coap-blocking-api.h"
-#include "res-compactor-configuration.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -15,6 +14,7 @@ extern coap_resource_t res_configure_compactor_endpoint;
 static void button_event_handler(button_hal_button_t *btn) {
     printf("Button pressed. Turning compactor ON.\n");
 
+    /*
     // Prepare for CoAP PUT request
     const char *endpoint_uri = get_compactor_sensor_endpoint_uri();
     if (strlen(endpoint_uri) == 0) {
@@ -23,7 +23,7 @@ static void button_event_handler(button_hal_button_t *btn) {
     }
 
     coap_put_pending = 1; // Signal to the main thread that a request is pending
-    printf("CoAP PUT request prepared to turn compactor ON.\n");
+    printf("CoAP PUT request prepared to turn compactor ON.\n"); */
 }
 
 // Process to handle button events and CoAP PUT requests
@@ -58,9 +58,9 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
             coap_set_header_uri_path(request, "/compactor/active");
             coap_set_payload(request, (uint8_t *)"true", strlen("true"));
 
-            coap_endpoint_t *endpoint = get_compactor_sensor_endpoint();
+            /* coap_endpoint_t *endpoint = get_compactor_sensor_endpoint();
             COAP_BLOCKING_REQUEST(endpoint, request, NULL);
-            printf("CoAP PUT request sent to turn compactor ON.\n");
+            printf("CoAP PUT request sent to turn compactor ON.\n"); */
 
             coap_put_pending = 0; // Clear the pending flag
         }
