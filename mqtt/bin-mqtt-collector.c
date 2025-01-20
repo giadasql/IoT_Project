@@ -442,7 +442,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
             // Prepare CoAP GET request to read configuration
             coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-            coap_set_header_uri_path(request, "/actuator/compactor/config");
+            coap_set_header_uri_path(request, "/compactor/config");
 
             coap_endpoint_t actuator_endpoint;
             if (coap_endpoint_parse(compactor_actuator_uri, strlen(compactor_actuator_uri), &actuator_endpoint)) {
@@ -456,7 +456,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
     		// Prepare the CoAP PUT request
     		coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-    		coap_set_header_uri_path(request, "/actuator/compactor/config");
+    		coap_set_header_uri_path(request, "/compactor/config");
    			coap_set_payload(request, (uint8_t *)compactor_sensor_uri, strlen(compactor_sensor_uri));
 
             printf("Payload being sent to actuator: %s\n", compactor_sensor_uri);

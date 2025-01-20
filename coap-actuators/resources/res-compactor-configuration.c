@@ -32,6 +32,14 @@ static void compactor_sensor_endpoint_put_handler(coap_message_t *request, coap_
     }
 }
 
+static void compactor_sensor_endpoint_get_handler(coap_message_t *request, coap_message_t *response,
+                                                    uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
+  printf("GET handler invoked\n");
+    snprintf((char *)buffer, preferred_size, "{\"uri\":\"%s\"}", compactor_sensor_endpoint_uri);
+    coap_set_header_content_format(response, TEXT_PLAIN);
+    coap_set_payload(response, buffer, strlen((char *)buffer));
+}
+
 // CoAP resource for configuring the endpoint
 RESOURCE(compactor_sensor_endpoint, "title=\"Configure Compactor Endpoint\";rt=\"Text\"",
-         NULL, compactor_sensor_endpoint_put_handler, NULL, NULL);
+         compactor_sensor_endpoint_get_handler, compactor_sensor_endpoint_put_handler, NULL, NULL);

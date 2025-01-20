@@ -34,7 +34,7 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
 {
     PROCESS_BEGIN();
 
-    printf("Compactor Actuator Process started.\n");
+    printf("Compactor Actuator Process started 2.\n");
 
     // Register the CoAP resource
 
