@@ -14,7 +14,7 @@ extern coap_endpoint_t compactor_sensor_address;
 // Button press event handler
 static void button_event_handler(button_hal_button_t *btn) {
     coap_put_pending = 1; // Signal to the main thread that a request is pending
-    printf("CoAP PUT request prepared to turn compactor ON.\n"); */
+    printf("CoAP PUT request prepared to turn compactor ON.\n");
 }
 
 // Process to handle button events and CoAP PUT requests
