@@ -348,6 +348,11 @@ static void send_aggregated_mqtt_message(void) {
     printf("Published aggregated data to MQTT: %s\n", pub_msg);
 }
 
+/* Global Variables */
+static char received_compactor_config[64] = {0}; // Buffer to store the current compactor config
+static uint8_t read_config_flag = 0; // Flag to indicate the configuration should be read first
+
+
 /* Callback Function for Reading Compactor Config */
 static void compactor_config_read_callback(coap_message_t *response) {
     const uint8_t *payload;
