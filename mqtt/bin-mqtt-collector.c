@@ -463,7 +463,6 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
 
     		// Send the CoAP request
-    		coap_endpoint_t actuator_endpoint;
     		if (coap_endpoint_parse(compactor_actuator_uri, strlen(compactor_actuator_uri), &actuator_endpoint)) {
         		COAP_BLOCKING_REQUEST(&actuator_endpoint, request, client_chunk_handler);
         		printf("Compactor actuator configuration sent.\n");
