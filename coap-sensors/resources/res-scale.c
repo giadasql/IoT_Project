@@ -42,5 +42,6 @@ static void scale_sensor_put_handler(coap_message_t *request, coap_message_t *re
 RESOURCE(scale_sensor,
          "title=\"Scale Sensor\";rt=\"Numeric\"",
          scale_sensor_get_handler, // GET handler
+         NULL,
          scale_sensor_put_handler, // PUT handler
-         NULL, NULL);
+         NULL);
