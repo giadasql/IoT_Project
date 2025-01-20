@@ -420,7 +420,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
     		// Prepare the CoAP PUT request
     		coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-    		coap_set_header_uri_path(request, "actuator/compactor/config");
+    		coap_set_header_uri_path(request, "/actuator/compactor/config");
    			coap_set_payload(request, (uint8_t *)compactor_sensor_uri, strlen(compactor_sensor_uri));
 
     		// Send the CoAP request
