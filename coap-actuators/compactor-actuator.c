@@ -9,7 +9,7 @@
 static int coap_put_pending = 0;
 
 extern coap_resource_t compactor_sensor_endpoint;
-//extern coap_endpoint_t compactor_sensor_address;
+extern coap_endpoint_t compactor_sensor_address;
 
 // Button press event handler
 static void button_event_handler(button_hal_button_t *btn) {
@@ -49,7 +49,14 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
             coap_set_header_uri_path(request, "/compactor/active");
             coap_set_payload(request, (uint8_t *)"true", strlen("true"));
 
-            //COAP_BLOCKING_REQUEST(compactor_sensor_address, request, NULL);
+            // check if the compactor_sensor_address is defined
+            // if not, print an error message
+            if (compactor_sensor_address.port == 0) {
+                printf("Error: Compactor sensor address is not defined.\n");
+                continue;
+            }
+
+            COAP_BLOCKING_REQUEST(compactor_sensor_address, request, NULL);
             printf("CoAP PUT request sent to turn compactor ON.\n");
 
             coap_put_pending = 0; // Clear the pending flag
