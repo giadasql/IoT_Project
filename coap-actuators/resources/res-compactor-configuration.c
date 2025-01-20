@@ -5,21 +5,11 @@
 #include <string.h>
 
 // CoAP server endpoint for the compactor sensor
-static coap_endpoint_t compactor_sensor_endpoint;
 static char compactor_sensor_endpoint_uri[64] = "test"; // Buffer to store endpoint URI
 
-coap_endpoint_t *get_compactor_sensor_endpoint(void) {
-    printf("Returning compactor sensor endpoint.\n");
-    return &compactor_sensor_endpoint;
-}
-
-const char *get_compactor_sensor_endpoint_uri(void) {
-    printf("Returning compactor sensor endpoint uri.\n");
-    return compactor_sensor_endpoint_uri;
-}
 
 // CoAP PUT handler to configure the compactor sensor endpoint
-static void configure_compactor_endpoint_handler(coap_message_t *request, coap_message_t *response,
+static void compactor_sensor_endpoint_put_handler(coap_message_t *request, coap_message_t *response,
                                                   uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     printf("CoAP handler invoked with payload: %.*s\n", preferred_size, buffer);
 
@@ -42,5 +32,5 @@ static void configure_compactor_endpoint_handler(coap_message_t *request, coap_m
 }
 
 // CoAP resource for configuring the endpoint
-RESOURCE(res_configure_compactor_endpoint, "title=\"Configure Compactor Endpoint\";rt=\"Text\"",
+RESOURCE(compactor_sensor_endpoint, "title=\"Configure Compactor Endpoint\";rt=\"Text\"",
          NULL, configure_compactor_endpoint_handler, NULL, NULL);
