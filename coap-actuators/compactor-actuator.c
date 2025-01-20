@@ -72,7 +72,7 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
                 coap_set_payload(request, (uint8_t *)"true", strlen("true"));
 
                 // Send the CoAP request
-                COAP_BLOCKING_REQUEST(compactor_address, request, client_chunk_handler);
+                COAP_BLOCKING_REQUEST(&compactor_address, request, client_chunk_handler);
                 printf("CoAP PUT request sent to turn compactor ON.\n");
             }
 
