@@ -14,6 +14,7 @@ coap_endpoint_t *get_compactor_sensor_endpoint(void) {
 }
 
 const char *get_compactor_sensor_endpoint_uri(void) {
+    printf("Returning compactor sensor endpoint uri.\n");
     return compactor_sensor_endpoint_uri;
 }
 
