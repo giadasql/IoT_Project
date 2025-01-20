@@ -476,7 +476,6 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
             coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
             coap_set_header_uri_path(request, "/actuator/compactor/config");
 
-            coap_endpoint_t actuator_endpoint;
                 COAP_BLOCKING_REQUEST(&compactor_actuator_endpoint, request, compactor_config_read_callback);
                 printf("Compactor configuration read request sent.\n");
 
