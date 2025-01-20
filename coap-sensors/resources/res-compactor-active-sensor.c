@@ -38,4 +38,4 @@ static void compactor_put_handler(coap_message_t *req, coap_message_t *res,
 }
 
 RESOURCE(compactor_active_sensor, "title=\"Compactor Active\";rt=\"Text\"",
-         compactor_get_handler, compactor_put_handler, NULL, NULL);
+         compactor_get_handler, NULL, compactor_put_handler, NULL);
