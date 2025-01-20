@@ -6,7 +6,7 @@
 
 // CoAP server endpoint for the compactor sensor
 static coap_endpoint_t compactor_sensor_endpoint;
-static char compactor_sensor_endpoint_uri[64] = ""; // Buffer to store endpoint URI
+static char compactor_sensor_endpoint_uri[64] = "test"; // Buffer to store endpoint URI
 
 coap_endpoint_t *get_compactor_sensor_endpoint(void) {
     return &compactor_sensor_endpoint;
