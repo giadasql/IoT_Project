@@ -38,7 +38,7 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
 
     // Register the CoAP resource
 
-    coap_activate_resource(&compactor_sensor_endpoint, "actuator/compactor/config");
+    coap_activate_resource(&compactor_sensor_endpoint, "compactor/config");
 
     // Initialize button-hal
     // button_hal_init();
