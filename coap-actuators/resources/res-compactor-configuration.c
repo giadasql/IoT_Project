@@ -18,13 +18,14 @@ static void compactor_sensor_endpoint_put_handler(coap_message_t *request, coap_
         strncpy(compactor_sensor_endpoint_uri, (char *)buffer, len);
         compactor_sensor_endpoint_uri[len] = '\0';
 
+        /*
         if (coap_endpoint_parse(compactor_sensor_endpoint_uri, strlen(compactor_sensor_endpoint_uri), &compactor_sensor_endpoint)) {
             printf("Configured compactor sensor endpoint: %s\n", compactor_sensor_endpoint_uri);
             coap_set_status_code(response, CHANGED_2_04);
         } else {
             printf("Invalid CoAP endpoint: %s\n", compactor_sensor_endpoint_uri);
             coap_set_status_code(response, BAD_REQUEST_4_00);
-        }
+        } */
     } else {
         printf("Invalid configuration payload.\n");
         coap_set_status_code(response, BAD_REQUEST_4_00);
