@@ -1,0 +1,44 @@
+#include "contiki.h"
+#include "coap-engine.h"
+#include "coap-blocking-api.h"
+#include <stdio.h>
+#include <string.h>
+
+// CoAP server endpoint for the compactor sensor
+static coap_endpoint_t compactor_sensor_endpoint;
+static char compactor_sensor_endpoint_uri[64] = ""; // Buffer to store endpoint URI
+
+coap_endpoint_t *get_compactor_sensor_endpoint(void) {
+    return &compactor_sensor_endpoint;
+}
+
+const char *get_compactor_sensor_endpoint_uri(void) {
+    return compactor_sensor_endpoint_uri;
+}
+
+// CoAP PUT handler to configure the compactor sensor endpoint
+static void configure_compactor_endpoint_handler(coap_message_t *request, coap_message_t *response,
+                                                  uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
+    printf("CoAP handler invoked with payload: %.*s\n", preferred_size, buffer);
+
+    size_t len = coap_get_payload(request, (const uint8_t **)&buffer);
+    if (len > 0 && len < sizeof(compactor_sensor_endpoint_uri)) {
+        strncpy(compactor_sensor_endpoint_uri, (char *)buffer, len);
+        compactor_sensor_endpoint_uri[len] = '\0';
+
+        if (coap_endpoint_parse(compactor_sensor_endpoint_uri, strlen(compactor_sensor_endpoint_uri), &compactor_sensor_endpoint)) {
+            printf("Configured compactor sensor endpoint: %s\n", compactor_sensor_endpoint_uri);
+            coap_set_status_code(response, CHANGED_2_04);
+        } else {
+            printf("Invalid CoAP endpoint: %s\n", compactor_sensor_endpoint_uri);
+            coap_set_status_code(response, BAD_REQUEST_4_00);
+        }
+    } else {
+        printf("Invalid configuration payload.\n");
+        coap_set_status_code(response, BAD_REQUEST_4_00);
+    }
+}
+
+// CoAP resource for configuring the endpoint
+RESOURCE(res_configure_compactor_endpoint, "title=\"Configure Compactor Endpoint\";rt=\"Text\"",
+         NULL, configure_compactor_endpoint_handler, NULL, NULL);
