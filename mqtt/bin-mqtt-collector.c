@@ -348,6 +348,23 @@ static void send_aggregated_mqtt_message(void) {
     printf("Published aggregated data to MQTT: %s\n", pub_msg);
 }
 
+/* Callback Function for Reading Compactor Config */
+static void compactor_config_read_callback(coap_message_t *response) {
+    const uint8_t *payload;
+    if (response == NULL) {
+        printf("Compactor config read timed out.\n");
+        return;
+    }
+
+    int len = coap_get_payload(response, &payload);
+    if (len > 0) {
+        snprintf(received_compactor_config, sizeof(received_compactor_config), "%.*s", len, (char *)payload);
+        printf("Received compactor configuration: %s\n", received_compactor_config);
+    } else {
+        printf("Received empty configuration.\n");
+    }
+}
+
 /*---------------------------------------------------------------------------*/
 /* Main Process */
 PROCESS_THREAD(coap_to_mqtt_process, ev, data)
@@ -415,6 +432,20 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
         	printf("Compactor actuator URI or sensor address is empty. Skipping configuration.\n");
     	}
         else {
+
+            printf("Reading compactor actuator address from actuator: %s\n", compactor_actuator_uri);
+
+            // Prepare CoAP GET request to read configuration
+            coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+            coap_set_header_uri_path(request, "/actuator/compactor/config");
+
+            coap_endpoint_t actuator_endpoint;
+            if (coap_endpoint_parse(compactor_actuator_uri, strlen(compactor_actuator_uri), &actuator_endpoint)) {
+                COAP_BLOCKING_REQUEST(&actuator_endpoint, request, compactor_config_read_callback);
+                printf("Compactor configuration read request sent.\n");
+            } else {
+                printf("Failed to parse actuator URI: %s\n", compactor_actuator_uri);
+            }
 
    			printf("Sending compactor sensor address to actuator: %s\n", compactor_actuator_uri);
 
