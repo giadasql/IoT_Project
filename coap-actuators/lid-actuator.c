@@ -55,6 +55,8 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
     while (1) {
         PROCESS_WAIT_EVENT();
 
+        printf("Event received\n");
+
         if (ev == button_hal_press_event) {
             button_event_handler((button_hal_button_t *)data);
         }
