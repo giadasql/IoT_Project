@@ -63,5 +63,5 @@ static void lid_sensor_put_handler(coap_message_t *request, coap_message_t *resp
 RESOURCE(lid_sensor,
          "title=\"Lid Sensor\";rt=\"Text\"",
          lid_sensor_get_handler, // GET handler
-         lid_sensor_put_handler, // PUT handler
-         NULL, NULL);
+         NULL,
+         lid_sensor_put_handler, NULL);

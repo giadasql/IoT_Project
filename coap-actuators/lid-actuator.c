@@ -67,7 +67,7 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
             coap_set_payload(request, (uint8_t *)(lid_sensor_state ? "1" : "0"), 1);
 
             // Send the CoAP request
-            COAP_BLOCKING_REQUEST(&lid_sensor_address, request, NULL);
+            //COAP_BLOCKING_REQUEST(&lid_sensor_address, request, NULL);
             printf("Lid sensor state update sent: %d\n", lid_sensor_state);
 
         }
