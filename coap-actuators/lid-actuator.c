@@ -31,6 +31,20 @@ static void toggle_lid_sensor_state(void) {
 
 }
 
+
+void client_chunk_handler(coap_message_t *response) {
+    const uint8_t *chunk;
+
+    if (response == NULL) {
+        puts("Request timed out");
+        return;
+    }
+
+    int len = coap_get_payload(response, &chunk);
+
+    printf("|%.*s\n", len, (char *)chunk);
+}
+
 // Button event handler to toggle the lid sensor
 static void button_event_handler(button_hal_button_t *btn) {
     printf("Button pressed. Toggling lid sensor.\n");
@@ -69,7 +83,7 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
             coap_set_payload(request, (uint8_t *)(lid_sensor_state ? "1" : "0"), 1);
 
             // Send the CoAP request
-            // COAP_BLOCKING_REQUEST(&lid_sensor_address, request, NULL);
+            COAP_BLOCKING_REQUEST(&lid_sensor_address, request, client_chunk_handler);
             printf("Lid sensor state update sent: %d\n", lid_sensor_state);
 
             send_command_flag = 0; // Clear the flag
