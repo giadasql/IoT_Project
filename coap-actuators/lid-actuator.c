@@ -80,7 +80,7 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
             // Prepare the CoAP PUT request
             coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
             coap_set_header_uri_path(request, "/lid/state");
-            coap_set_payload(request, (uint8_t *)(lid_sensor_state ? "1" : "0"), 1);
+            coap_set_payload(request, (uint8_t *)(lid_sensor_state ? "open" : "closed"), 1);
 
             // Send the CoAP request
             COAP_BLOCKING_REQUEST(&lid_sensor_address, request, client_chunk_handler);
