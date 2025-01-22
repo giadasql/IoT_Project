@@ -5,6 +5,14 @@
 #include <stdio.h>
 #include <string.h>
 
+// Sensor Configuration Structure
+typedef struct {
+    char endpoint_uri[64];
+    coap_endpoint_t address;
+    const char *name;
+    const char *resource_path;
+} sensor_config_t;
+
 // External declarations for the combined sensor configurations
 extern coap_resource_t lid_sensor_config, scale_sensor_config, waste_level_sensor_config;
 extern sensor_config_t lid_sensor, scale_sensor, waste_level_sensor;
