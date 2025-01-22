@@ -47,6 +47,7 @@ static void combined_sensor_config_put_handler(coap_message_t *req, coap_message
         return;
     }
 
+	printf("Received payload length: %d\n", (int)len);
     printf("Received configuration payload: %.*s\n", (int)len, payload);
 
     bool lid_configured = configure_sensor("lid_sensor", (const char *)payload, &lid_sensor_address, lid_sensor_endpoint_uri);
