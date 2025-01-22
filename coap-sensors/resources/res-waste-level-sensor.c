@@ -14,7 +14,8 @@ static void waste_level_to_string(char *buffer, size_t size, void *state) {
 }
 
 static void waste_level_update_state(const char *payload, void *state) {
-    *(float *)state = atof(payload); // Convert payload string to float
+    *(float *)state += atof(payload); // Convert payload string to float and add to the current value
+
     if (*(float *)state < 0.0) {
         *(float *)state = 0.0; // Clamp to minimum 0%
     } else if (*(float *)state > 100.0) {

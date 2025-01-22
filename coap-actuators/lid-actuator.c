@@ -4,6 +4,7 @@
 #include "coap-blocking-api.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h> // For rand()
 
 // Sensor Configuration Structure
 typedef struct {
@@ -55,6 +56,11 @@ static void button_event_handler(button_hal_button_t *btn) {
     toggle_lid_sensor_state();
 }
 
+// Function to generate a random value between min and max
+static int get_random_value(int min, int max) {
+    return (rand() % (max - min + 1)) + min;
+}
+
 // Main process for the actuator
 PROCESS(lid_actuator_process, "Lid Actuator");
 AUTOSTART_PROCESSES(&lid_actuator_process);
@@ -80,6 +86,47 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
         }
 
         if (send_command_flag) {
+          	// send command to scale to update weight
+            if (strlen(scale_sensor.endpoint_uri) == 0) {
+        		printf("Scale sensor endpoint not configured. Skipping update.\n");
+      		}
+            else{
+             	int random_value = get_random_value(5, 30);
+              	// Prepare the JSON payload
+    			char payload[32];
+    			snprintf(payload, sizeof(payload), "%.2f", random_value);
+
+    			// Prepare the CoAP PUT request
+    			coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+    			coap_set_header_uri_path(request, "/scale/value");
+    			coap_set_payload(request, (uint8_t *)payload, strlen(payload));
+
+    			// Send the CoAP request to the scale sensor address
+    			printf("Sending updated scale weight to: %s, Payload: %s\n", scale_sensor.endpoint_uri, payload);
+    			COAP_BLOCKING_REQUEST(&scale_sensor.address, request, client_chunk_handler);
+            }
+
+            // send command to waste level sensor to update level
+            if (strlen(waste_level_sensor.endpoint_uri) == 0) {
+                printf("Waste level sensor endpoint not configured. Skipping update.\n");
+            }
+            else{
+                int random_value = get_random_value(0, 20);
+                // Prepare the JSON payload
+                char payload[32];
+                snprintf(payload, sizeof(payload), "%d", random_value);
+
+	            // Prepare the CoAP PUT request
+                coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+                coap_set_header_uri_path(request, "/waste/level");
+                coap_set_payload(request, (uint8_t *)payload, strlen(payload));
+
+                // Send the CoAP request to the waste level sensor address
+                printf("Sending updated waste level to: %s, Payload: %s\n", waste_level_sensor.endpoint_uri, payload);
+                COAP_BLOCKING_REQUEST(&waste_level_sensor.address, request, client_chunk_handler);
+            }
+
+          	// send the command to close the bin
             // Prepare the CoAP PUT request
             coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
             coap_set_header_uri_path(request, "/lid/state");
