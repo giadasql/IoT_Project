@@ -13,9 +13,9 @@ typedef struct {
 } sensor_config_t;
 
 // Sensor Configurations
-sensor_config_t lid_sensor = {"", {}, "lid_sensor", "/lid/config"};
-sensor_config_t scale_sensor = {"", {}, "scale_sensor", "/scale/config"};
-sensor_config_t waste_level_sensor = {"", {}, "waste_level_sensor", "/waste/config"};
+sensor_config_t lid_sensor = {"", {}, "lid_sensor", "lid/config"};
+sensor_config_t scale_sensor = {"", {}, "scale_sensor", "scale/config"};
+sensor_config_t waste_level_sensor = {"", {}, "waste_level_sensor", "waste/config"};
 
 // Helper Function to Configure Sensor
 static bool configure_sensor(const char *payload, sensor_config_t *sensor) {
