@@ -7,12 +7,11 @@
 
 /*----------------------------------------------------------------------------*/
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
-#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xfe80, 0, 0, 0, 0x206, 0x6, 0x6, 0x6)
 /* The path of the resource to observe */
 #define OBS_RESOURCE_URI "scale/value"
 
 /*----------------------------------------------------------------------------*/
-static uip_ipaddr_t server_ipaddr[1]; /* holds the server ip address */
+static coap_endpoint_t server_ipaddr[1]; /* holds the server ip address */
 static coap_observee_t *obs;
 
 /*----------------------------------------------------------------------------*/
@@ -71,6 +70,7 @@ toggle_observation(void)
     obs = NULL;
   } else {
     printf("Starting observation\n");
+    coap_endpoint_parse("fe80::206:6:6:6", strlen("fe80::206:6:6:6"), &server_ipaddr);
     obs = coap_obs_request_registration(server_ipaddr, REMOTE_PORT,
                                         OBS_RESOURCE_URI, notification_callback, NULL);
   }
@@ -84,7 +84,6 @@ toggle_observation(void)
 PROCESS_THREAD(er_example_observe_client, ev, data)
 {
   PROCESS_BEGIN();
-  SERVER_NODE(server_ipaddr);
   toggle_observation();
 
   while(1) {
