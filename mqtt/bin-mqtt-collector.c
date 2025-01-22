@@ -478,7 +478,7 @@ if (strlen(lid_actuator_uri) > 0) {
 
         // Prepare the CoAP PUT request
         coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-        coap_set_header_uri_path(request, "/lid/config/lid_sensor");
+        coap_set_header_uri_path(request, "/lid/config");
         coap_set_payload(request, (uint8_t *)lid_sensor_uri, strlen(lid_sensor_uri));
 
         // Send the CoAP request
@@ -494,7 +494,7 @@ if (strlen(lid_actuator_uri) > 0) {
 
         // Prepare the CoAP PUT request
         coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-        coap_set_header_uri_path(request, "/lid/config/scale_sensor");
+        coap_set_header_uri_path(request, "/scale/config");
         coap_set_payload(request, (uint8_t *)scale_sensor_uri, strlen(scale_sensor_uri));
 
         // Send the CoAP request
@@ -510,7 +510,7 @@ if (strlen(lid_actuator_uri) > 0) {
 
         // Prepare the CoAP PUT request
         coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-        coap_set_header_uri_path(request, "/lid/config/waste_level_sensor");
+        coap_set_header_uri_path(request, "/waste/config");
         coap_set_payload(request, (uint8_t *)waste_level_sensor_uri, strlen(waste_level_sensor_uri));
 
         // Send the CoAP request
