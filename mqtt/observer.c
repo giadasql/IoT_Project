@@ -11,7 +11,7 @@
 #define OBS_RESOURCE_URI "scale/value"
 
 /*----------------------------------------------------------------------------*/
-static coap_endpoint_t *server_ipaddr; /* holds the server ip address */
+static coap_endpoint_t server_ipaddr; /* holds the server ip address */
 static coap_observee_t *obs;
 
 /*----------------------------------------------------------------------------*/
