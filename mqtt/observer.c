@@ -65,7 +65,6 @@ toggle_observation(void)
 {
   if(obs) {
     printf("Stopping observation\n");
-    coap_obs_remove_observee(obs);
     obs = NULL;
   } else {
     printf("Starting observation\n");
