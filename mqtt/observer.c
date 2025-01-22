@@ -7,7 +7,7 @@
 
 /*----------------------------------------------------------------------------*/
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
-#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xfe80, 0, 0, 0, 0, 0x202, 0x2, 0x2)
+#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xfe80, 0, 0, 0, 0x206, 0x6, 0x6, 0x6)
 /* The path of the resource to observe */
 #define OBS_RESOURCE_URI "scale/value"
 
