@@ -70,7 +70,7 @@ toggle_observation(void)
   } else {
     printf("Starting observation\n");
     coap_endpoint_parse("fe80::206:6:6:6", strlen("fe80::206:6:6:6"), &server_ipaddr);
-    obs = coap_obs_request_registration(&server_ipaddr, 5683,
+    obs = coap_obs_request_registration(&server_ipaddr,
                                         OBS_RESOURCE_URI, notification_callback, NULL);
   }
 }
