@@ -451,7 +451,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
       if (state == STATE_CONFIG_RECEIVED) {
  		printf("Configuration received. Fetching CoAP data...\n");
 
-        if (send_config_flag) {
+          if (send_config_flag) {
         // 1. Send Compactor Sensor Address to Compactor Actuator
         if (strlen(compactor_actuator_uri) > 0 && strlen(compactor_sensor_uri) > 0) {
             printf("Sending compactor sensor address to actuator: %s\n", compactor_actuator_uri);
@@ -494,8 +494,6 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
         send_config_flag = 0; // Clear the flag after sending all configurations
     }
-
-      }
 
 	  if (state == STATE_CONFIG_RECEIVED) {
             printf("Reading compactor actuator address from actuator: %s\n", compactor_actuator_uri);
