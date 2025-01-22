@@ -10,6 +10,9 @@ AUTOSTART_PROCESSES(&lid_sensor_process);
 PROCESS_THREAD(lid_sensor_process, ev, data) {
   PROCESS_BEGIN();
 
+  leds_off(LEDS_ALL); // Turn off all LEDs
+  leds_on(LEDS_RED); // Turn on the red LED
+
   // Activate the CoAP resource
   coap_activate_resource(&lid_sensor, "lid/state");
 
