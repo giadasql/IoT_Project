@@ -94,7 +94,7 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
              	int random_value = get_random_value(5, 30);
               	// Prepare the JSON payload
     			char payload[32];
-    			snprintf(payload, sizeof(payload), "%.2f", random_value);
+    			snprintf(payload, sizeof(payload), "%.2d", random_value);
 
     			// Prepare the CoAP PUT request
     			coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
