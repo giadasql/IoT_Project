@@ -48,5 +48,5 @@ static void waste_level_sensor_put_handler(coap_message_t *request, coap_message
 RESOURCE(waste_level_sensor,
          "title=\"Waste Level Sensor\";rt=\"Numeric\"",
          waste_level_sensor_get_handler, // GET handler
-         waste_level_sensor_put_handler, // PUT handler
-         NULL, NULL);
+         NULL,
+         waste_level_sensor_put_handler, NULL);

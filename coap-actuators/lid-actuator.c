@@ -19,8 +19,8 @@ extern coap_resource_t lid_sensor_config, scale_sensor_config, waste_level_senso
 extern sensor_config_t lid_sensor, scale_sensor, waste_level_sensor;
 
 static coap_message_t request[1]; // CoAP request message
-static int lid_sensor_state = 0;  // Current state of the lid sensor (0: closed, 1: open)
-static int send_command_flag = 0; // Flag to send the CoAP command
+static bool lid_sensor_state = false;  // Current state of the lid sensor (0: closed, 1: open)
+static bool send_command_flag = false; // Flag to send the CoAP command
 
 // Function to toggle the state of the lid sensor on the remote device
 static void toggle_lid_sensor_state(void) {
@@ -86,15 +86,19 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
         }
 
         if (send_command_flag) {
+          // if we are closing the lid, we need to update the scale and waste level sensors
+          if(!lid_sensor_state){
+            int added_weight = get_random_value(3, 15); // kg
+            int added_waste = get_random_value(1, 15); // percentage
+
           	// send command to scale to update weight
             if (strlen(scale_sensor.endpoint_uri) == 0) {
         		printf("Scale sensor endpoint not configured. Skipping update.\n");
       		}
             else{
-             	int random_value = get_random_value(5, 30);
               	// Prepare the JSON payload
     			char payload[32];
-    			snprintf(payload, sizeof(payload), "%.2d", random_value);
+    			snprintf(payload, sizeof(payload), "%.2d", added_weight);
 
     			// Prepare the CoAP PUT request
     			coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
@@ -111,10 +115,9 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
                 printf("Waste level sensor endpoint not configured. Skipping update.\n");
             }
             else{
-                int random_value = get_random_value(0, 20);
                 // Prepare the JSON payload
                 char payload[32];
-                snprintf(payload, sizeof(payload), "%d", random_value);
+                snprintf(payload, sizeof(payload), "%d", added_waste);
 
 	            // Prepare the CoAP PUT request
                 coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
@@ -125,20 +128,22 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
                 printf("Sending updated waste level to: %s, Payload: %s\n", waste_level_sensor.endpoint_uri, payload);
                 COAP_BLOCKING_REQUEST(&waste_level_sensor.address, request, client_chunk_handler);
             }
+        }
 
-          	// send the command to close the bin
-            // Prepare the CoAP PUT request
-            coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-            coap_set_header_uri_path(request, "/lid/state");
-            coap_set_payload(request, (uint8_t *)(lid_sensor_state ? "open" : "closed"),
-                             strlen(lid_sensor_state ? "open" : "closed"));
 
-            // Send the CoAP request to the lid sensor address
-            COAP_BLOCKING_REQUEST(&lid_sensor.address, request, client_chunk_handler);
-            printf("Lid sensor state update sent: %d\n", lid_sensor_state);
+        // send the command to close the bin
+        // Prepare the CoAP PUT request
+        coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+        coap_set_header_uri_path(request, "/lid/state");
+        coap_set_payload(request, (uint8_t *)(lid_sensor_state ? "open" : "closed"),
+                         strlen(lid_sensor_state ? "open" : "closed"));
 
-            // Reset the send command flag
-            send_command_flag = 0;
+        // Send the CoAP request to the lid sensor address
+        COAP_BLOCKING_REQUEST(&lid_sensor.address, request, client_chunk_handler);
+        printf("Lid sensor state update sent: %d\n", lid_sensor_state);
+
+        // Reset the send command flag
+        send_command_flag = 0;
         }
     }
 
