@@ -20,7 +20,9 @@ static bool configure_sensor(const char *json_key, const char *json_payload, coa
     int result = sscanf(json_payload, "{\"%31[^\"]\":\"%63[^\"]\"}", key, uri);
 
     if (result == 2 && strcmp(json_key, key) == 0) {
-        strncpy(uri_buffer, uri, sizeof(uri_buffer));
+        strncpy(uri_buffer, uri, sizeof(uri_buffer) - 1);
+		uri_buffer[sizeof(uri_buffer) - 1] = '\0'; // Ensure null-termination
+
         if (coap_endpoint_parse(uri, strlen(uri), endpoint)) {
             printf("Configured sensor endpoint for %s: %s\n", json_key, uri);
             return true;
