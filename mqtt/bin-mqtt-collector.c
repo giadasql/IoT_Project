@@ -468,29 +468,62 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
             printf("Compactor actuator or sensor URI missing. Skipping compactor configuration.\n");
         }
 
-        // 2. Send Multiple Sensor Addresses to Lid Actuator in a Single Request
-        if (strlen(lid_actuator_uri) > 0) {
-            printf("Sending scale, waste level, and lid sensor addresses to lid actuator: %s\n", lid_actuator_uri);
+// 2. Send Sensor Addresses to Lid Actuator Individually
+if (strlen(lid_actuator_uri) > 0) {
+    printf("Sending individual sensor addresses to lid actuator: %s\n", lid_actuator_uri);
 
-            // Prepare the JSON payload with all sensor addresses
-            char payload[256];
-            snprintf(payload, sizeof(payload),
-                     "{\"lid_sensor\":\"%s\",\"scale_sensor\":\"%s\",\"waste_level_sensor\":\"%s\"}",
-                     lid_sensor_uri, scale_sensor_uri, waste_level_sensor_uri);
+    // 1. Send Lid Sensor Address
+    if (strlen(lid_sensor_uri) > 0) {
+        printf("Sending Lid Sensor address to lid actuator: %s\n", lid_sensor_uri);
 
-            printf("Payload for lid actuator: %s\n", payload);
+        // Prepare the CoAP PUT request
+        coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+        coap_set_header_uri_path(request, "/lid/config/lid_sensor");
+        coap_set_payload(request, (uint8_t *)lid_sensor_uri, strlen(lid_sensor_uri));
 
-            // Prepare the CoAP PUT request
-            coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-            coap_set_header_uri_path(request, "/lid/config");
-            coap_set_payload(request, (uint8_t *)payload, strlen(payload));
+        // Send the CoAP request
+        COAP_BLOCKING_REQUEST(&lid_actuator_endpoint, request, client_chunk_handler);
+        printf("Lid Sensor configuration sent to lid actuator.\n");
+    } else {
+        printf("No URI configured for Lid Sensor. Skipping configuration.\n");
+    }
 
-            // Send the CoAP request
-            COAP_BLOCKING_REQUEST(&lid_actuator_endpoint, request, client_chunk_handler);
-            printf("Lid actuator configuration sent.\n");
-        } else {
-            printf("Lid actuator URI missing. Skipping lid configuration.\n");
-        }
+    // 2. Send Scale Sensor Address
+    if (strlen(scale_sensor_uri) > 0) {
+        printf("Sending Scale Sensor address to lid actuator: %s\n", scale_sensor_uri);
+
+        // Prepare the CoAP PUT request
+        coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+        coap_set_header_uri_path(request, "/lid/config/scale_sensor");
+        coap_set_payload(request, (uint8_t *)scale_sensor_uri, strlen(scale_sensor_uri));
+
+        // Send the CoAP request
+        COAP_BLOCKING_REQUEST(&lid_actuator_endpoint, request, client_chunk_handler);
+        printf("Scale Sensor configuration sent to lid actuator.\n");
+    } else {
+        printf("No URI configured for Scale Sensor. Skipping configuration.\n");
+    }
+
+    // 3. Send Waste Level Sensor Address
+    if (strlen(waste_level_sensor_uri) > 0) {
+        printf("Sending Waste Level Sensor address to lid actuator: %s\n", waste_level_sensor_uri);
+
+        // Prepare the CoAP PUT request
+        coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+        coap_set_header_uri_path(request, "/lid/config/waste_level_sensor");
+        coap_set_payload(request, (uint8_t *)waste_level_sensor_uri, strlen(waste_level_sensor_uri));
+
+        // Send the CoAP request
+        COAP_BLOCKING_REQUEST(&lid_actuator_endpoint, request, client_chunk_handler);
+        printf("Waste Level Sensor configuration sent to lid actuator.\n");
+    } else {
+        printf("No URI configured for Waste Level Sensor. Skipping configuration.\n");
+    }
+
+	} else {
+    	printf("Lid actuator URI missing. Skipping lid configuration.\n");
+	}
+
 
         send_config_flag = 0; // Clear the flag after sending all configurations
     }
