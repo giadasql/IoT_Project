@@ -21,6 +21,8 @@ PROCESS_THREAD(device_process, ev, data) {
   while (1) {
     PROCESS_WAIT_EVENT();
 
+    printf("Device Process running...\n");
+
     if(send_update) {
         printf("Sending update...\n");
     }
