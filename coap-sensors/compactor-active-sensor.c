@@ -5,7 +5,7 @@
 // Declare the resource from the resource file
 extern coap_resource_t compactor_active_sensor;
 extern coap_resource_t collector_config;
-extern process_event_t collector_updated_event;
+extern process_event_t collector_update_event;
 
 PROCESS(device_process, "Device Process");
 AUTOSTART_PROCESSES(&device_process);

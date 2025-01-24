@@ -36,7 +36,7 @@ void generic_put_handler(coap_message_t *request, coap_message_t *response,
         // Update the sensor state using the payload
         sensor->update_state((const char *)payload, sensor->state);
         // Trigger the custom event
-        process_post(PROCESS_BROADCAST, collector_updated_event, NULL);
+        process_post(PROCESS_BROADCAST, collector_update_event, NULL);
 
         coap_set_status_code(response, CHANGED_2_04);
     } else {
