@@ -63,9 +63,10 @@ def connect_to_db():
 def update_current_state(cursor, bin_id, data):
     """Update the current state of the bin in the database."""
     query = """
-        INSERT INTO bins_current_state (bin_id, lid_state, compactor_state, waste_level, scale_weight)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO bins_current_state (bin_id, rfid, lid_state, compactor_state, waste_level, scale_weight)
+        VALUES (%s, %s, %s, %s, %s, %s)
         ON DUPLICATE KEY UPDATE
+            rfid = VALUES(rfid),
             lid_state = VALUES(lid_state),
             compactor_state = VALUES(compactor_state),
             waste_level = VALUES(waste_level),
@@ -74,6 +75,7 @@ def update_current_state(cursor, bin_id, data):
     """
     cursor.execute(query, (
         bin_id,
+        data.get("rfid", {}).get("value"),
         data.get("lid_sensor", {}).get("value"),
         data.get("compactor_sensor", {}).get("value"),
         data.get("waste_level_sensor", {}).get("value"),
@@ -129,6 +131,12 @@ def handle_config_request_message(client, data):
     else:
         print(f"No configuration found for collector_address: {collector_address}")
 
+# Utility function to normalize decimal values
+def normalize_decimal(value):
+    """Convert a numeric string with commas to a proper decimal format."""
+    if isinstance(value, str):
+        return value.replace(",", ".")
+    return value
 
 # Handle sensor update messages
 def handle_sensor_update(client, data):
@@ -138,16 +146,24 @@ def handle_sensor_update(client, data):
         print("No bin_id found in update message. Skipping...")
         return
 
+    rfid = data.get("rfid", {}).get("value")
+    scale_weight = normalize_decimal(data.get("scale", {}).get("value"))
+    waste_level = normalize_decimal(data.get("waste_level_sensor", {}).get("value"))
+    timestamp = data.get("rfid", {}).get("time_updated")  # Assume timestamp is here for consistency
+
     # Check the in-memory state
     prev_state = bins_state.get(bin_id, {})
+    prev_scale = prev_state.get("scale")
+    prev_time = prev_state.get("timestamp")
     changes = {}
 
     # Detect changes by comparing new values with the in-memory state
     sensors = {
+        "rfid": rfid,
         "lid_sensor": data.get("lid_sensor", {}).get("value"),
         "compactor_sensor": data.get("compactor_sensor", {}).get("value"),
-        "waste_level_sensor": data.get("waste_level_sensor", {}).get("value"),
-        "scale": data.get("scale", {}).get("value")
+        "waste_level_sensor": waste_level,
+        "scale": scale_weight
     }
 
     for sensor, value in sensors.items():

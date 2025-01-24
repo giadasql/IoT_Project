@@ -409,7 +409,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
            linkaddr_node_addr.u8[6], linkaddr_node_addr.u8[7]);
   mqtt_register(&conn, &coap_to_mqtt_process, client_id, mqtt_event, 128);
   state = STATE_INIT;
-  etimer_set(&periodic_timer, CLOCK_SECOND * 10);
+  etimer_set(&periodic_timer, CLOCK_SECOND * 2);
 
   get_local_ipv6_address(local_ipv6_address, sizeof(local_ipv6_address));
     printf("Local IPv6 Address: %s\n", local_ipv6_address);
