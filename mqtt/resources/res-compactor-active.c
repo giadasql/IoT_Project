@@ -1,6 +1,6 @@
 #include "contiki.h"
 #include "coap-engine.h"
-#include "sensor_utils.h"
+#include "resource_utils.h"
 #include "conversion_utils.h"
 #include "dev/leds.h"
 #include <stdio.h>
