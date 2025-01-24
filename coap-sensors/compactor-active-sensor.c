@@ -1,11 +1,14 @@
 #include "contiki.h"
 #include "coap-engine.h"
+#include "sensor_utils.h"
 #include <stdio.h>
 
 // Declare the resource from the resource file
 extern coap_resource_t compactor_active_sensor;
 extern coap_resource_t collector_config;
 extern process_event_t collector_update_event;
+extern char collector_address[64];
+extern int compactor_state;
 
 PROCESS(device_process, "Device Process");
 AUTOSTART_PROCESSES(&device_process);
@@ -25,11 +28,18 @@ PROCESS_THREAD(device_process, ev, data) {
   while (1) {
     PROCESS_WAIT_EVENT();
 
-    printf("Device Process running...\n");
-
     if (ev == collector_update_event) {
-        printf("Will update the collector.\n");
+        printf("Compactor state updated. Will notify the collector.\n");
 
+        // send a CoAP PUT request to the collector, send true if compactor is active
+        coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+        coap_set_header_uri_path(request, "compactor/state");
+        if (compactor_state) {
+            coap_set_payload(request, (uint8_t *)"true", strlen("true"));
+        } else {
+            coap_set_payload(request, (uint8_t *)"false", strlen("false"));
+        }
+        COAP_BLOCKING_REQUEST(&collector_address, request, client_chunk_handler);
     }
   }
 

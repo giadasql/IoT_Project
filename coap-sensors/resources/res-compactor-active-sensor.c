@@ -7,7 +7,7 @@
 #include <string.h>
 
 // Sensor State
-static int compactor_state = 0; // 0: false, 1: true
+int compactor_state = 0; // 0: false, 1: true
 
 // Timer for auto-reset
 static struct ctimer compactor_timer;
