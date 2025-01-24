@@ -14,7 +14,7 @@ PROCESS_THREAD(device_process, ev, data) {
   PROCESS_BEGIN();
 
   // Initialize the custom event
-  collector_updated_event = process_alloc_event();
+  collector_update_event = process_alloc_event();
 
 
   // Activate Resource
