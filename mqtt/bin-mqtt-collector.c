@@ -573,20 +573,20 @@ if (strlen(lid_actuator_uri) > 0) {
         printf("Advertisement payload: %s\n", advertisement_payload);
 
         // Send advertisement to all known devices
-        if (strlen(compactor_actuator_uri) > 0) {
-            printf("Sending advertisement to Compactor Actuator: %s\n", compactor_actuator_uri);
+        if (strlen(compactor_sensor_uri) > 0) {
+            printf("Sending advertisement to Compactor Sensor: %s\n", compactor_sensor_uri);
             coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
             coap_set_header_uri_path(request, "/config/collector");
             coap_set_payload(request, (uint8_t *)advertisement_payload, strlen(advertisement_payload));
-            COAP_BLOCKING_REQUEST(&compactor_actuator_endpoint, request, client_chunk_handler);
+            COAP_BLOCKING_REQUEST(&compactor_server_endpoint, request, client_chunk_handler);
         }
 
-        if (strlen(lid_actuator_uri) > 0) {
-            printf("Sending advertisement to Lid Actuator: %s\n", lid_actuator_uri);
+        if (strlen(lid_sensor_uri) > 0) {
+            printf("Sending advertisement to Lid Sensor: %s\n", lid_sensor_uri);
             coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
             coap_set_header_uri_path(request, "/config/collector");
             coap_set_payload(request, (uint8_t *)advertisement_payload, strlen(advertisement_payload));
-            COAP_BLOCKING_REQUEST(&lid_actuator_endpoint, request, client_chunk_handler);
+            COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_chunk_handler);
         }
 
         if (strlen(scale_sensor_uri) > 0) {
