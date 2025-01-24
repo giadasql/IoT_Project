@@ -582,6 +582,8 @@ if (strlen(lid_actuator_uri) > 0) {
         }
 
         if (strlen(lid_sensor_uri) > 0) {
+          snprintf(advertisement_payload, sizeof(advertisement_payload),
+             "%s", local_ipv6_address);
             printf("Sending advertisement to Lid Sensor: %s\n", lid_sensor_uri);
             coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
             coap_set_header_uri_path(request, "/config/collector");
@@ -590,6 +592,8 @@ if (strlen(lid_actuator_uri) > 0) {
         }
 
         if (strlen(scale_sensor_uri) > 0) {
+          snprintf(advertisement_payload, sizeof(advertisement_payload),
+             "%s", local_ipv6_address);
             printf("Sending advertisement to Scale Sensor: %s\n", scale_sensor_uri);
             coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
             coap_set_header_uri_path(request, "/config/collector");
@@ -598,6 +602,8 @@ if (strlen(lid_actuator_uri) > 0) {
         }
 
         if (strlen(waste_level_sensor_uri) > 0) {
+          snprintf(advertisement_payload, sizeof(advertisement_payload),
+             "%s", local_ipv6_address);
             printf("Sending advertisement to Waste Level Sensor: %s\n", waste_level_sensor_uri);
             coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
             coap_set_header_uri_path(request, "/config/collector");
