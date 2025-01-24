@@ -5,7 +5,8 @@
 #include <string.h>
 
 // flag used to know when to send an update
-bool send_update = false;
+process_event_t collector_update_event;
+
 
 // Generic GET Handler
 void generic_get_handler(coap_message_t *request, coap_message_t *response,
@@ -34,7 +35,9 @@ void generic_put_handler(coap_message_t *request, coap_message_t *response,
     if (len > 0) {
         // Update the sensor state using the payload
         sensor->update_state((const char *)payload, sensor->state);
-        send_update = true;
+        // Trigger the custom event
+        process_post(PROCESS_BROADCAST, collector_updated_event, NULL);
+
         coap_set_status_code(response, CHANGED_2_04);
     } else {
         coap_set_status_code(response, BAD_REQUEST_4_00);
