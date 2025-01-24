@@ -7,6 +7,8 @@
 // flag used to know when to send an update
 process_event_t collector_update_event;
 
+bool update_required = false;
+
 
 // Generic GET Handler
 void generic_get_handler(coap_message_t *request, coap_message_t *response,
@@ -36,8 +38,9 @@ void generic_put_handler(coap_message_t *request, coap_message_t *response,
         // Update the sensor state using the payload
         sensor->update_state((const char *)payload, sensor->state);
 
-        // Trigger the custom event
-        process_post(PROCESS_BROADCAST, collector_update_event, NULL);
+        // Trigger the update
+        update_required = true;
+
         coap_set_status_code(response, CHANGED_2_04);
     } else {
         coap_set_status_code(response, BAD_REQUEST_4_00);
