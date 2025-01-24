@@ -34,9 +34,11 @@ PROCESS_THREAD(device_process, ev, data) {
 
     if (ev == collector_update_event) {
         printf("Compactor state updated. Will notify the collector: %s\n", collector_address);
-        continue;
+
 
         coap_endpoint_parse(collector_address, strlen(collector_address), &collector_endpoint);
+
+         continue;
 
         // send a CoAP PUT request to the collector, send true if compactor is active
         coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
