@@ -30,6 +30,8 @@ void generic_put_handler(coap_message_t *request, coap_message_t *response,
     const uint8_t *payload = NULL;
     size_t len = coap_get_payload(request, &payload);
 
+    printf("Generic PUT Handler invoked.\n");
+
     if (len > 0) {
         // Update the sensor state using the payload
         sensor->update_state((const char *)payload, sensor->state);

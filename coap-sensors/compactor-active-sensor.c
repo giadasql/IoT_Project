@@ -10,8 +10,9 @@ extern coap_resource_t collector_config;
 extern char collector_address[64];
 extern int compactor_state;
 
-coap_endpoint_t collector_endpoint;
-coap_message_t request[1];
+static coap_endpoint_t collector_endpoint;
+static coap_message_t request[1];
+
 
 // Flag to track whether an update is required
 extern bool update_required;
