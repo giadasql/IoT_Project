@@ -4,9 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 
-// flag used to know when to send an update
-bool send_update = false;
-
 // Generic GET Handler
 void generic_get_handler(coap_message_t *request, coap_message_t *response,
                          uint8_t *buffer, uint16_t preferred_size, int32_t *offset,
