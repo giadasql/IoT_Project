@@ -28,6 +28,7 @@ static generic_sensor_t lid_sensor_data = {
   .name = "lid_sensor",
   .type = "Text",
   .state = &lid_state,
+  .time_updated = "",
   .to_string = lid_state_to_string,
   .update_state = lid_state_update_state
 };

@@ -24,6 +24,7 @@ static generic_sensor_t waste_level_sensor_data = {
     .name = "waste_level_sensor",
     .type = "Numeric",
     .state = &waste_level,
+    .time_updated = "",
     .to_string = waste_level_to_string,
     .update_state = waste_level_update_state
 };

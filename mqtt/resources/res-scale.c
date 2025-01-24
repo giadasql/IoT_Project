@@ -23,6 +23,7 @@ static generic_sensor_t scale_sensor_data = {
   .name = "scale_sensor",
   .type = "Numeric",
   .state = &scale_value,
+    .time_updated = "",
   .to_string = scale_value_to_string,
   .update_state = scale_value_update_state
 };
