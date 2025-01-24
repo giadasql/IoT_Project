@@ -561,7 +561,7 @@ if (strlen(lid_actuator_uri) > 0) {
 
             coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
  		 	coap_set_header_uri_path(request, "/rfid/value");
- 		 	COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback_lid_state);
+ 		 	COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback_rfid_value);
 
 			printf("Fetching Scale State...\n");
             printf("Fetching Scale Sensor State...\n");
