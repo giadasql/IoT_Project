@@ -8,6 +8,7 @@ typedef struct {
     char *name;
     char *type;
     void *state;
+    char time_updated[32];
     void (*to_string)(char *buffer, size_t size, void *state);
     void (*update_state)(const char *payload, void *state);
 } generic_sensor_t;

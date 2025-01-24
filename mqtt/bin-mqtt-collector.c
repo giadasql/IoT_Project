@@ -39,6 +39,8 @@ extern coap_resource_t lid_sensor;
 extern coap_resource_t waste_level_sensor;
 extern coap_resource_t scale_sensor;
 
+extern generic_sensor_t compactor_sensor;
+
 static char compactor_actuator_uri[64] = {0};
 static char compactor_sensor_uri[64] = {0};
 static char lid_actuator_uri[64] = {0};
@@ -367,7 +369,7 @@ static void send_aggregated_mqtt_message(void) {
              "\"waste_level_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"}}",
              bin_id,
              collector_data.lid_sensor.value, collector_data.lid_sensor.time_updated,
-             collector_data.compactor_sensor.value, collector_data.compactor_sensor.time_updated,
+             compactor_sensor->state, compactor_sensor->time_updated,
              collector_data.scale.value, collector_data.scale.time_updated,
              collector_data.waste_level_sensor.value, collector_data.waste_level_sensor.time_updated);
 
@@ -528,11 +530,6 @@ if (strlen(lid_actuator_uri) > 0) {
     }
 
 	  if (state == STATE_CONFIG_RECEIVED) {
-  			printf("Fetching Compactor State...\n");
-  			coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
- 			coap_set_header_uri_path(request, "/compactor/active");
- 			COAP_BLOCKING_REQUEST(&compactor_server_endpoint, request, client_callback_compactor_state);
-
  		 	printf("Fetching Lid State...\n");
  		 	coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
  		 	coap_set_header_uri_path(request, "/lid/state");
