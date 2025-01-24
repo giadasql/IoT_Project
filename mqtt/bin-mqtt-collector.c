@@ -74,6 +74,7 @@ typedef struct {
     sensor_data_t compactor_sensor;
     sensor_data_t waste_level_sensor;
     sensor_data_t scale;
+    sensor_data_t rfid;
 } collector_data_t;
 
 static collector_data_t collector_data;
@@ -318,6 +319,14 @@ static void client_callback_lid_state(coap_message_t *response) {
     }
 }
 
+static void client_callback_rfid_value(coap_message_t *response) {
+    if (response) {
+        parse_payload(response->payload, "Rfid", &collector_data.rfid);
+    } else {
+        printf("CoAP request for Rfid timed out.\n");
+    }
+}
+
 static void client_callback_compactor_state(coap_message_t *response) {
     if (response) {
         parse_payload(response->payload, "Compactor Sensor", &collector_data.compactor_sensor);
@@ -354,11 +363,13 @@ static void send_aggregated_mqtt_message(void) {
 
     snprintf(pub_msg, sizeof(pub_msg),
              "{\"bin_id\":\"%s\","
+             "\"rfid\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
              "\"lid_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
              "\"compactor_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
              "\"scale\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
              "\"waste_level_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"}}",
              bin_id,
+             collector_data.rfid.value, collector_data.rfid.time_updated,
              collector_data.lid_sensor.value, collector_data.lid_sensor.time_updated,
              collector_data.compactor_sensor.value, collector_data.compactor_sensor.time_updated,
              collector_data.scale.value, collector_data.scale.time_updated,
@@ -546,6 +557,10 @@ if (strlen(lid_actuator_uri) > 0) {
  		 	printf("Fetching Lid State...\n");
  		 	coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
  		 	coap_set_header_uri_path(request, "/lid/state");
+ 		 	COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback_lid_state);
+
+            coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+ 		 	coap_set_header_uri_path(request, "/rfid/value");
  		 	COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback_lid_state);
 
 			printf("Fetching Scale State...\n");
