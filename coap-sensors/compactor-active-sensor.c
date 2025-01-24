@@ -34,10 +34,10 @@ PROCESS_THREAD(device_process, ev, data) {
   coap_activate_resource(&collector_config, "config/collector");
 
   while (1) {
-    PROCESS_WAIT_EVENT();
+    PROCESS_YIELD();
 
     // Check if the timer expired
-    if (etimer_expired(&update_timer)) {
+    if((ev == PROCESS_EVENT_TIMER && data == &update_timer)) {
         if (update_required) {
             printf("Compactor state updated. Will notify the collector: %s\n", collector_address);
             coap_endpoint_parse(collector_address, strlen(collector_address), &collector_endpoint);
