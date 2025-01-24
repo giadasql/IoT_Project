@@ -375,9 +375,6 @@ static void send_aggregated_mqtt_message(void) {
     printf("Published aggregated data to MQTT: %s\n", pub_msg);
 }
 
-/* Global Variables */
-static char received_compactor_config[64] = {0}; // Buffer to store the current compactor config
-
 /*---------------------------------------------------------------------------*/
 /* Main Process */
 PROCESS_THREAD(coap_to_mqtt_process, ev, data)
