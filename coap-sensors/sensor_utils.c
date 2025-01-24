@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
+// flag used to know when to send an update
+bool send_update = false;
+
 // Generic GET Handler
 void generic_get_handler(coap_message_t *request, coap_message_t *response,
                          uint8_t *buffer, uint16_t preferred_size, int32_t *offset,
@@ -28,10 +31,10 @@ void generic_put_handler(coap_message_t *request, coap_message_t *response,
                          const generic_sensor_t *sensor) {
     const uint8_t *payload = NULL;
     size_t len = coap_get_payload(request, &payload);
-
     if (len > 0) {
         // Update the sensor state using the payload
         sensor->update_state((const char *)payload, sensor->state);
+        send_update = true;
         coap_set_status_code(response, CHANGED_2_04);
     } else {
         coap_set_status_code(response, BAD_REQUEST_4_00);
