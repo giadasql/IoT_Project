@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 
+// Sensor State
+int compactor_state = 0; // 0: false, 1: true
+
 // Define Sensor
 generic_sensor_t compactor_sensor = {
     "compactor_active", "Text", &compactor_state, boolean_to_string, boolean_update_state};
