@@ -11,6 +11,7 @@
 #include "dev/leds.h"
 #include "jsmn.h"
 #include "time_utils.h"
+#include "resource_utils.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
