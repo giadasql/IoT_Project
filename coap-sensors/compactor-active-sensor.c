@@ -1,6 +1,6 @@
 #include "contiki.h"
 #include "coap-engine.h"
-#include "<stdio.h>"
+#include <stdio.h>
 
 // Declare the resource from the resource file
 extern coap_resource_t compactor_active_sensor;
