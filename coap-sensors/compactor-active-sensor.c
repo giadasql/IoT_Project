@@ -1,6 +1,7 @@
 #include "contiki.h"
 #include "coap-engine.h"
 #include "sensor_utils.h"
+#include "coap-blocking-api.h"
 #include <stdio.h>
 
 // Declare the resource from the resource file
@@ -30,6 +31,10 @@ PROCESS_THREAD(device_process, ev, data) {
 
     if (ev == collector_update_event) {
         printf("Compactor state updated. Will notify the collector.\n");
+        coap_endpoint_t collector_endpoint;
+        coap_message_t request[1];
+
+        coap_endpoint_parse(collector_address, strlen(collector_address), &collector_endpoint);
 
         // send a CoAP PUT request to the collector, send true if compactor is active
         coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
