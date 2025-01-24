@@ -46,7 +46,7 @@ PROCESS_THREAD(device_process, ev, data) {
         } else {
             coap_set_payload(request, (uint8_t *)"false", strlen("false"));
         }
-        COAP_BLOCKING_REQUEST(&collector_endpoint, request, client_chunk_handler);
+        //COAP_BLOCKING_REQUEST(&collector_endpoint, request, client_chunk_handler);
     }
   }
 
