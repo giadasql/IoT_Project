@@ -568,7 +568,7 @@ if (strlen(lid_actuator_uri) > 0) {
         // Prepare advertisement payload with the collector address
         char advertisement_payload[128];
         snprintf(advertisement_payload, sizeof(advertisement_payload),
-             "{\"collector_address\":\"%s\"}", local_ipv6_address);
+             "%s", local_ipv6_address);
 
         printf("Advertisement payload: %s\n", advertisement_payload);
 
