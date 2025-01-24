@@ -11,6 +11,9 @@ extern process_event_t collector_update_event;
 extern char collector_address[64];
 extern int compactor_state;
 
+coap_endpoint_t collector_endpoint;
+coap_message_t request[1];
+
 PROCESS(device_process, "Device Process");
 AUTOSTART_PROCESSES(&device_process);
 
@@ -31,8 +34,7 @@ PROCESS_THREAD(device_process, ev, data) {
 
     if (ev == collector_update_event) {
         printf("Compactor state updated. Will notify the collector.\n");
-        coap_endpoint_t collector_endpoint;
-        coap_message_t request[1];
+
 
         coap_endpoint_parse(collector_address, strlen(collector_address), &collector_endpoint);
 
