@@ -328,13 +328,6 @@ static void client_callback_lid_state(coap_message_t *response) {
     }
 }
 
-static void client_callback_compactor_state(coap_message_t *response) {
-    if (response) {
-        parse_payload(response->payload, "Compactor Sensor", &collector_data.compactor_sensor);
-    } else {
-        printf("CoAP request for Compactor Sensor timed out.\n");
-    }
-}
 
 static void client_callback_scale_state(coap_message_t *response) {
     if (response) {
