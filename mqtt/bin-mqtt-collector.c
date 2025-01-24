@@ -370,7 +370,7 @@ static void send_aggregated_mqtt_message(void) {
              "\"waste_level_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"}}",
              bin_id,
              collector_data.lid_sensor.value, collector_data.lid_sensor.time_updated,
-             compactor_sensor->state, compactor_sensor->time_updated,
+             (char*)compactor_sensor.state, compactor_sensor.time_updated,
              collector_data.scale.value, collector_data.scale.time_updated,
              collector_data.waste_level_sensor.value, collector_data.waste_level_sensor.time_updated);
 
