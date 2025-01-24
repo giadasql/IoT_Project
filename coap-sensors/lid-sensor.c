@@ -1,4 +1,5 @@
 #include "contiki.h"
+#include "dev/leds.h" // Include LEDs header
 #include "coap-engine.h"
 
 // Declare the resource from the resource file
