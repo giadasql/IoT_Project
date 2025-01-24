@@ -27,7 +27,7 @@ PROCESS_THREAD(device_process, ev, data) {
   PROCESS_BEGIN();
 
   // Set the timer to check for updates every second
-  etimer_set(&update_timer, CLOCK_SECOND);
+  etimer_set(&update_timer, CLOCK_SECOND * 5);
 
   // Activate Resources
   coap_activate_resource(&compactor_active_sensor, "compactor/active");
