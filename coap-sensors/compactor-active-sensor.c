@@ -27,7 +27,7 @@ PROCESS_THREAD(device_process, ev, data) {
 
     printf("Device Process running...\n");
 
-    if (ev == collector_updated_event) {
+    if (ev == collector_update_event) {
         printf("Will update the collector.\n");
 
     }
