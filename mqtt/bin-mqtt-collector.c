@@ -34,6 +34,11 @@ static coap_endpoint_t waste_level_server_endpoint;
 static coap_endpoint_t compactor_actuator_endpoint;
 static coap_endpoint_t lid_actuator_endpoint;
 
+extern coap_resource_t compactor_active_sensor;
+extern coap_resource_t lid_sensor;
+extern coap_resource_t waste_level_sensor;
+extern coap_resource_t scale_sensor;
+
 static char compactor_actuator_uri[64] = {0};
 static char compactor_sensor_uri[64] = {0};
 static char lid_actuator_uri[64] = {0};
@@ -41,6 +46,7 @@ static char lid_sensor_uri[64] = {0};
 static char waste_level_sensor_uri[64] = {0};
 static char scale_sensor_uri[64] = {0};
 static uint8_t send_config_flag = 0;
+static bool force_advertise = false;
 
 static coap_message_t request[1];
 
@@ -62,6 +68,7 @@ static uint8_t state;
 #define STATE_DISCONNECTED 6
 
 static struct etimer periodic_timer;
+static struct etimer advertise_timer;
 
 typedef struct {
     char value[64];
@@ -400,8 +407,15 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
   state = STATE_INIT;
   etimer_set(&periodic_timer, CLOCK_SECOND * 10);
 
+
   get_local_ipv6_address(local_ipv6_address, sizeof(local_ipv6_address));
     printf("Local IPv6 Address: %s\n", local_ipv6_address);
+
+  // Activate the CoAP resources
+  coap_activate_resource(&lid_sensor, "lid/state");
+  coap_activate_resource(&compactor_active_sensor, "compactor/state");
+  coap_activate_resource(&scale_sensor, "scale/value");
+  coap_activate_resource(&waste_level_sensor, "waste/level");
 
 
   while(1) {
@@ -449,9 +463,15 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
       }
 
       if (state == STATE_CONFIG_RECEIVED) {
- 		printf("Configuration received. Fetching CoAP data...\n");
+ 		printf("Configuration received.\n");
+        // set the timer for sending advertisement messages every 60 seconds
+        etimer_set(&advertise_timer, CLOCK_SECOND * 60);
+        force_advertise = true;
 
-          if (send_config_flag) {
+
+
+        // TODO: remove this, all the actuators will only call this node
+        if (send_config_flag) {
         // 1. Send Compactor Sensor Address to Compactor Actuator
         if (strlen(compactor_actuator_uri) > 0 && strlen(compactor_sensor_uri) > 0) {
             printf("Sending compactor sensor address to actuator: %s\n", compactor_actuator_uri);
@@ -529,15 +549,6 @@ if (strlen(lid_actuator_uri) > 0) {
     }
 
 	  if (state == STATE_CONFIG_RECEIVED) {
-            printf("Reading compactor actuator address from actuator: %s\n", compactor_actuator_uri);
-
-            // Prepare CoAP GET request to read configuration
-            coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-            coap_set_header_uri_path(request, "/compactor/config");
-
-            COAP_BLOCKING_REQUEST(&compactor_actuator_endpoint, request, compactor_config_read_callback);
-            printf("Compactor configuration read request sent.\n");
-
   			printf("Fetching Compactor State...\n");
   			coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
  			coap_set_header_uri_path(request, "/compactor/active");
@@ -572,6 +583,54 @@ if (strlen(lid_actuator_uri) > 0) {
       etimer_reset(&periodic_timer);
     }
 
+    if (force_advertise || (ev == PROCESS_EVENT_TIMER && data == &advertise_timer)) {
+        printf("Sending advertisement message...\n");
+
+        // Prepare advertisement payload with the collector address
+        char advertisement_payload[128];
+        snprintf(advertisement_payload, sizeof(advertisement_payload),
+             "{\"collector_address\":\"%s\"}", local_ipv6_address);
+
+        printf("Advertisement payload: %s\n", advertisement_payload);
+
+        // Send advertisement to all known devices
+        if (strlen(compactor_actuator_uri) > 0) {
+            printf("Sending advertisement to Compactor Actuator: %s\n", compactor_actuator_uri);
+            coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+            coap_set_header_uri_path(request, "/config/collector");
+            coap_set_payload(request, (uint8_t *)advertisement_payload, strlen(advertisement_payload));
+            COAP_BLOCKING_REQUEST(&compactor_actuator_endpoint, request, client_chunk_handler);
+        }
+
+        if (strlen(lid_actuator_uri) > 0) {
+            printf("Sending advertisement to Lid Actuator: %s\n", lid_actuator_uri);
+            coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+            coap_set_header_uri_path(request, "/config/collector");
+            coap_set_payload(request, (uint8_t *)advertisement_payload, strlen(advertisement_payload));
+            COAP_BLOCKING_REQUEST(&lid_actuator_endpoint, request, client_chunk_handler);
+        }
+
+        if (strlen(scale_sensor_uri) > 0) {
+            printf("Sending advertisement to Scale Sensor: %s\n", scale_sensor_uri);
+            coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+            coap_set_header_uri_path(request, "/config/collector");
+            coap_set_payload(request, (uint8_t *)advertisement_payload, strlen(advertisement_payload));
+            COAP_BLOCKING_REQUEST(&scale_server_endpoint, request, client_chunk_handler);
+        }
+
+        if (strlen(waste_level_sensor_uri) > 0) {
+            printf("Sending advertisement to Waste Level Sensor: %s\n", waste_level_sensor_uri);
+            coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+            coap_set_header_uri_path(request, "/config/collector");
+            coap_set_payload(request, (uint8_t *)advertisement_payload, strlen(advertisement_payload));
+            COAP_BLOCKING_REQUEST(&waste_level_server_endpoint, request, client_chunk_handler);
+        }
+
+        force_advertise = false;
+
+        // Reset the advertisement timer
+        etimer_reset(&advertise_timer);
+    }
 
   }
 
