@@ -39,7 +39,6 @@ PROCESS_THREAD(device_process, ev, data) {
         // send a CoAP PUT request to the collector, send true if compactor is active
         coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
         coap_set_header_uri_path(request, "compactor/state");
-        continue;
 
         if (compactor_state) {
             coap_set_payload(request, (uint8_t *)"true", strlen("true"));
