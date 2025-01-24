@@ -1,5 +1,6 @@
 #include "contiki.h"
 #include "coap-engine.h"
+#include "dev/leds.h" // Include LEDs header
 
 // Declare the resource from the resource file
 extern coap_resource_t lid_sensor;
