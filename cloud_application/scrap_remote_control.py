@@ -115,7 +115,7 @@ def check_waste_level():
 # Scheduled task for polling
 scheduler = BackgroundScheduler()
 scheduler.add_job(check_waste_level, 'interval', seconds=POLLING_INTERVAL)
-scheduler.start()
+# scheduler.start()
 
 # Flask route to display the current state of bins
 @app.route('/')
