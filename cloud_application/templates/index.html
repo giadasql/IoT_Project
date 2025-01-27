@@ -3,72 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bin Current State</title>
+    <title>Bin Monitoring System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
     <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
         }
-        table, th, td {
-            border: 1px solid black;
+        h1 {
+            color: #0d6efd;
+            margin-bottom: 20px;
         }
-        th, td {
-            padding: 8px;
-            text-align: left;
+        .table {
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        th {
-            background-color: #f2f2f2;
+        .table thead {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+        .status-active {
+            color: green;
+            font-weight: bold;
+        }
+        .status-inactive {
+            color: red;
+            font-weight: bold;
+        }
+        .btn-group {
+            margin-bottom: 20px;
+        }
+        .bin-section {
+            margin-bottom: 40px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 20px;
         }
     </style>
 </head>
 <body>
-<h1>Bin Current State</h1>
-<table id="bin-table">
-    <thead>
-    <tr>
-        <th>Bin ID</th>
-        <th>Lid State</th>
-        <th>Compactor State</th>
-        <th>Waste Level (%)</th>
-        <th>Scale Weight (kg)</th>
-        <th>Last Updated</th>
-    </tr>
-    </thead>
-    <tbody>
-    <!-- Rows will be populated by JavaScript -->
-    </tbody>
-</table>
+<div class="container">
+    <h1>Bin Monitoring System</h1>
+
+    <!-- Loop through each bin and generate a UI section -->
+    {% for bin in bins %}
+    <div class="bin-section">
+        <h2>Bin ID: {{ bin.bin_id }}</h2>
+
+        <!-- Simulation Buttons -->
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="increment_weight_random('{{ bin.bin_id }}')">Increment Weight</button>
+            <button class="btn btn-danger" onclick="increment_waste_random('{{ bin.bin_id }}')">Increment Waste Level</button>
+            <button class="btn btn-warning" onclick="reduce_waste_random('{{ bin.bin_id }}')">Reduce Waste Level</button>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="sendCoapRequest('{{ bin.bin_id }}', 'compactor/active', 'true')">Activate Compactor</button>
+            <button class="btn btn-danger" onclick="sendCoapRequest('{{ bin.bin_id }}', 'compactor/active', 'false')">Deactivate Compactor</button>
+            <button class="btn btn-primary" onclick="sendCoapRequest('{{ bin.bin_id }}', 'lid/active', 'true')">Open Lid</button>
+            <button class="btn btn-secondary" onclick="sendCoapRequest('{{ bin.bin_id }}', 'lid/active', 'false')">Close Lid</button>
+        </div>
+
+        <!-- Bin Current State Table -->
+        <h3>Bin Current State</h3>
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Lid State</th>
+                <th>Compactor State</th>
+                <th>Waste Level (%)</th>
+                <th>Scale Weight (kg)</th>
+                <th>Last Updated</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>{{ bin.lid_state }}</td>
+                <td class="{{ 'status-active' if bin.compactor_state == 'active' else 'status-inactive' }}">
+                    {{ bin.compactor_state }}
+                </td>
+                <td>{{ bin.waste_level }}</td>
+                <td>{{ bin.scale_weight }}</td>
+                <td>{{ bin.last_updated }}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+
+    <!-- RFID Transactions Table -->
+    <h1>RFID Transactions</h1>
+    <table id="transaction-table" class="table table-striped">
+        <thead>
+        <tr>
+            <th>Transaction ID</th>
+            <th>RFID</th>
+            <th>Bin ID</th>
+            <th>Weight Difference (kg)</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Rows will be populated by JavaScript -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Bootstrap JS and dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
 <script>
-    // Function to fetch data and update the table
-    function updateTable() {
-        fetch('/api/bins')
+    // Function to send a CoAP request via the Flask backend
+    async function sendCoapRequest(bin_id, path, payload) {
+        try {
+            const response = await fetch('/coap', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ bin_id, path, payload }),
+            });
+            const result = await response.json();
+            console.log(result.message);
+        } catch (error) {
+            console.error('Error sending CoAP request:', error);
+        }
+    }
+
+    // Function to increment weight randomly
+    function increment_weight_random(bin_id) {
+        const weight = Math.random() * 25 + 5;
+        sendCoapRequest(bin_id, '/scale/value', weight.toFixed(2));
+    }
+
+    // Function to increment waste level randomly
+    function increment_waste_random(bin_id) {
+        const waste = Math.random() * 15 + 5;
+        sendCoapRequest(bin_id, '/waste/level', waste.toFixed(2));
+    }
+
+    // Function to reduce waste level randomly
+    function reduce_waste_random(bin_id) {
+        const waste = Math.random() * 20 + 20;
+        sendCoapRequest(bin_id, '/waste/level', waste.toFixed(2));
+    }
+
+    // Function to fetch transaction data and update the table
+    function updateTransactionTable() {
+        fetch('/api/transactions')
             .then(response => response.json())
             .then(data => {
-                const tableBody = document.querySelector('#bin-table tbody');
+                const tableBody = document.querySelector('#transaction-table tbody');
                 tableBody.innerHTML = ''; // Clear existing rows
 
-                data.forEach(bin => {
+                data.forEach(transaction => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                            <td>${bin.bin_id}</td>
-                            <td>${bin.lid_state}</td>
-                            <td>${bin.compactor_state}</td>
-                            <td>${bin.waste_level}</td>
-                            <td>${bin.scale_weight}</td>
-                            <td>${bin.last_updated}</td>
-                        `;
+                        <td>${transaction.transaction_id}</td>
+                        <td>${transaction.rfid}</td>
+                        <td>${transaction.bin_id}</td>
+                        <td>${transaction.weight_diff}</td>
+                        <td>${transaction.start_time}</td>
+                        <td>${transaction.end_time}</td>
+                    `;
                     tableBody.appendChild(row);
                 });
             })
-            .catch(error => console.error('Error fetching data:', error));
+            .catch(error => console.error('Error fetching transaction data:', error));
     }
 
-    // Update the table every 5 seconds
-    setInterval(updateTable, 5000);
+    // Update the transaction table every 5 seconds
+    setInterval(updateTransactionTable, 5000);
 
     // Initial load
-    updateTable();
+    updateTransactionTable();
 </script>
 </body>
 </html>
