@@ -152,7 +152,7 @@
     // Function to reduce waste level randomly
     function reduce_waste_random(bin_id) {
         const waste = Math.random() * 20 + 20;
-        sendCoapRequest(bin_id, '/waste/level', -waste.toFixed(2));
+        sendCoapRequest(bin_id, '/waste/level', (-waste).toFixed(2));
     }
 
     // Function to fetch transaction data and update the table
