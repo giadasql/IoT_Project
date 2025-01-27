@@ -90,6 +90,7 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
           if(!lid_sensor_state){
             int added_weight = get_random_value(3, 15); // kg
             int added_waste = get_random_value(1, 15); // percentage
+            printf("Generated waste level: %d\n", added_waste);  // Debug print
 
           	// send command to scale to update weight
             if (strlen(scale_sensor.endpoint_uri) == 0) {
@@ -118,6 +119,7 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
                 // Prepare the JSON payload
                 char payload[32];
                 snprintf(payload, sizeof(payload), "%d", added_waste);
+                printf("Waste level payload: %s\n", payload);  // Debug print
 
 	            // Prepare the CoAP PUT request
                 coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
