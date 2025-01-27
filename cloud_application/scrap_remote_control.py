@@ -8,8 +8,8 @@ import xml.etree.ElementTree as ET
 # Configuration
 DATABASE_CONFIG = {
     'host': 'localhost',
-    'user': 'root',
-    'password': 'moka',
+    'user': 'iot-project',
+    'password': 'iot-password',
     'database': 'scrap'
 }
 
