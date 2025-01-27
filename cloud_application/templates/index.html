@@ -162,8 +162,8 @@
     
     // Function to empty the bin
     function empty_bin(bin_id) {
-        sendCoapRequest(bin_id, '/waste/level', '0');
-        sendCoapRequest(bin_id, '/scale/value', '0');
+        sendCoapRequest(bin_id, '/waste/level', '-100');
+        sendCoapRequest(bin_id, '/scale/value', '-1000');
     }
 
     // Function to fetch transaction data and update the table
