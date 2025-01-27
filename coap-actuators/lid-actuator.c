@@ -118,7 +118,7 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
             else{
                 // Prepare the JSON payload
                 char payload[32];
-                printf("Waste level: %s\n", added_waste);  // Debug print
+                printf("Waste level: %d\n", added_waste);  // Debug print
                 snprintf(payload, sizeof(payload), "%d", added_waste);
                 printf("Waste level payload: %s\n", payload);  // Debug print
 
