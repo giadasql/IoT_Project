@@ -166,6 +166,30 @@
         sendCoapRequest(bin_id, '/scale/value', '-1000');
     }
 
+    // Function to fetch data and update the table
+    function updateTable() {
+        fetch('/api/bins')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.querySelector('#bin-table tbody');
+                tableBody.innerHTML = ''; // Clear existing rows
+
+                data.forEach(bin => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                            <td>${bin.bin_id}</td>
+                            <td>${bin.lid_state}</td>
+                            <td>${bin.compactor_state}</td>
+                            <td>${bin.waste_level}</td>
+                            <td>${bin.scale_weight}</td>
+                            <td>${bin.last_updated}</td>
+                        `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    }
+
     // Function to fetch transaction data and update the table
     function updateTransactionTable() {
         fetch('/api/transactions')
@@ -192,9 +216,11 @@
 
     // Update the transaction table every 5 seconds
     setInterval(updateTransactionTable, 5000);
+    setInterval(updateTable, 5000);
 
     // Initial load
     updateTransactionTable();
+    updateTable();
 </script>
 </body>
 </html>
