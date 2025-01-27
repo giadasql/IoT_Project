@@ -15,6 +15,10 @@ static void scale_value_to_string(char *buffer, size_t size, void *state) {
 
 static void scale_value_update_state(const char *payload, void *state) {
   *(float *)state += atof(payload); // Convert payload string to float and add to the current value
+  // Clamp to minimum 0
+    if (*(float *)state < 0.0) {
+        *(float *)state = 0.0;
+    }
   printf("Scale sensor value updated to: %.2f\n", *(float *)state);
 }
 
