@@ -15,7 +15,7 @@ DATABASE_CONFIG = {
 
 WASTE_LEVEL_THRESHOLD = 30.0  # Set your waste level threshold here
 POLLING_INTERVAL = 2  # Polling interval in seconds
-COAP_SERVER_ADDRESS = "coap://fd00::205:5:5:5:5683/compactor/active"  # Replace with your CoAP server address
+COAP_SERVER_ADDRESS = "coap://[fd00::205:5:5:5]:5683/compactor/active"  # Replace with your CoAP server address
 
 # Initialize Flask app
 app = Flask(__name__)
