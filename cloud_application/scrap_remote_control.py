@@ -54,6 +54,19 @@ def fetch_bin_data():
         logging.error(f"Database error: {err}")
         return []
 
+def fetch_transaction_data():
+    try:
+        connection = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM bins_rfid_transactions")
+        transactions = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return transactions
+    except mysql.connector.Error as err:
+        logging.error(f"Database error: {err}")
+        return []
+
 # Function to send a CoAP PUT request using CoAPthon3
 def send_coap_put_request(bin_id, path, payload):
     bins = parse_config_xml()
@@ -113,6 +126,11 @@ def index():
 def get_bins():
     bins = fetch_bin_data()
     return jsonify(bins)
+
+@app.route('/api/transactions')
+def get_transactions():
+    transactions = fetch_transaction_data()
+    return jsonify(transactions)
 
 # Flask route to handle CoAP requests from the UI
 @app.route('/coap', methods=['POST'])
