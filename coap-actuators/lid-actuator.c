@@ -99,16 +99,20 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
             else{
               	// Prepare the JSON payload
     			char payload[32];
+                printf("Waste level: %d\n", added_waste);  // Debug print
     			snprintf(payload, sizeof(payload), "%.2d", added_weight);
+                printf("Waste level: %d\n", added_waste);  // Debug print
 
     			// Prepare the CoAP PUT request
     			coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
     			coap_set_header_uri_path(request, "/scale/value");
     			coap_set_payload(request, (uint8_t *)payload, strlen(payload));
-
+                printf("Waste level: %d\n", added_waste);  // Debug print
     			// Send the CoAP request to the scale sensor address
     			printf("Sending updated scale weight to: %s, Payload: %s\n", scale_sensor.endpoint_uri, payload);
+                printf("Waste level: %d\n", added_waste);  // Debug print
     			COAP_BLOCKING_REQUEST(&scale_sensor.address, request, client_chunk_handler);
+                printf("Waste level: %d\n", added_waste);  // Debug print
             }
 
             // send command to waste level sensor to update level
