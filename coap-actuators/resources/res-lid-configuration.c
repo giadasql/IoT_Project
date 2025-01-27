@@ -14,8 +14,6 @@ typedef struct {
 
 // Sensor Configurations
 sensor_config_t lid_sensor = {"", {}, "lid_sensor", "lid/config"};
-sensor_config_t scale_sensor = {"", {}, "scale_sensor", "scale/config"};
-sensor_config_t waste_level_sensor = {"", {}, "waste_level_sensor", "waste/config"};
 
 // Helper Function to Configure Sensor
 static bool configure_sensor(const char *payload, sensor_config_t *sensor) {
@@ -71,34 +69,6 @@ static void lid_sensor_get_handler(coap_message_t *req, coap_message_t *res,
     sensor_config_get_handler(req, res, buf, preferred_size, offset, &lid_sensor);
 }
 
-// CoAP Handlers for Scale Sensor
-static void scale_sensor_put_handler(coap_message_t *req, coap_message_t *res,
-                                     uint8_t *buf, uint16_t preferred_size, int32_t *offset) {
-    sensor_config_put_handler(req, res, buf, preferred_size, offset, &scale_sensor);
-}
-
-static void scale_sensor_get_handler(coap_message_t *req, coap_message_t *res,
-                                     uint8_t *buf, uint16_t preferred_size, int32_t *offset) {
-    sensor_config_get_handler(req, res, buf, preferred_size, offset, &scale_sensor);
-}
-
-// CoAP Handlers for Waste Level Sensor
-static void waste_level_sensor_put_handler(coap_message_t *req, coap_message_t *res,
-                                           uint8_t *buf, uint16_t preferred_size, int32_t *offset) {
-    sensor_config_put_handler(req, res, buf, preferred_size, offset, &waste_level_sensor);
-}
-
-static void waste_level_sensor_get_handler(coap_message_t *req, coap_message_t *res,
-                                           uint8_t *buf, uint16_t preferred_size, int32_t *offset) {
-    sensor_config_get_handler(req, res, buf, preferred_size, offset, &waste_level_sensor);
-}
-
 // CoAP Resources
 RESOURCE(lid_sensor_config, "title=\"Lid Sensor Config\";rt=\"Text\"",
          lid_sensor_get_handler, NULL, lid_sensor_put_handler, NULL);
-
-RESOURCE(scale_sensor_config, "title=\"Scale Sensor Config\";rt=\"Text\"",
-         scale_sensor_get_handler, NULL, scale_sensor_put_handler, NULL);
-
-RESOURCE(waste_level_sensor_config, "title=\"Waste Level Sensor Config\";rt=\"Text\"",
-         waste_level_sensor_get_handler, NULL, waste_level_sensor_put_handler, NULL);
