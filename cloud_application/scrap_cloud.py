@@ -7,8 +7,8 @@ from datetime import datetime
 # MySQL connection details
 DB_CONFIG = {
     "host": "localhost",
-    "user": "root",
-    "password": "moka",
+    "user": "iot-project",
+    "password": "iot-password",
     "database": "scrap"
 }
 

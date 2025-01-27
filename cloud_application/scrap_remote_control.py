@@ -8,8 +8,8 @@ from aiocoap import Context, Message, Code
 # Configuration
 DATABASE_CONFIG = {
     'host': 'localhost',
-    'user': 'root',
-    'password': 'moka',
+    'user': 'iot-project',
+    'password': 'iot-password',
     'database': 'scrap'
 }
 
