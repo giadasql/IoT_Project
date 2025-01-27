@@ -54,13 +54,18 @@
     <div class="bin-section">
         <h2>Bin ID: {{ bin.bin_id }}</h2>
 
+        <h3>Simulation</h3>
         <!-- Simulation Buttons -->
         <div class="btn-group">
             <button class="btn btn-success" onclick="increment_weight_random('{{ bin.bin_id }}')">Increment Weight</button>
             <button class="btn btn-danger" onclick="increment_waste_random('{{ bin.bin_id }}')">Increment Waste Level</button>
             <button class="btn btn-warning" onclick="reduce_waste_random('{{ bin.bin_id }}')">Reduce Waste Level</button>
+            <button class="btn btn-warning" onclick="empty_bin('{{ bin.bin_id }}')">Empty Bin</button>
         </div>
+        
+        <br>
 
+        <h3>Control Panel</h3>
         <!-- Control Panel -->
         <div class="btn-group">
             <button class="btn btn-success" onclick="sendCoapRequest('{{ bin.bin_id }}', 'compactor/active', 'true')">Activate Compactor</button>
@@ -153,6 +158,12 @@
     function reduce_waste_random(bin_id) {
         const waste = Math.random() * 20 + 20;
         sendCoapRequest(bin_id, '/waste/level', (-waste).toFixed(2));
+    }
+    
+    // Function to empty the bin
+    function empty_bin(bin_id) {
+        sendCoapRequest(bin_id, '/waste/level', '0');
+        sendCoapRequest(bin_id, '/scale/value', '0');
     }
 
     // Function to fetch transaction data and update the table
