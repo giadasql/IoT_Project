@@ -75,13 +75,13 @@ def send_coap_put_request(bin_id, path, payload):
         return False
 
     coap_server_address = None
-    if path.startswith('compactor'):
+    if path.startswith('/compactor'):
         coap_server_address = (bins[bin_id]['compactor_server_address'], 5683)
-    elif path.startswith('lid'):
+    elif path.startswith('/lid'):
         coap_server_address = (bins[bin_id]['lid_server_address'], 5683)
-    elif path.startswith('scale'):
+    elif path.startswith('/scale'):
         coap_server_address = (bins[bin_id]['scale_server_address'], 5683)
-    elif path.startswith('waste'):
+    elif path.startswith('/waste'):
         coap_server_address = (bins[bin_id]['waste_level_server_address'], 5683)
 
     if not coap_server_address:
