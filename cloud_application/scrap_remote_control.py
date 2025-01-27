@@ -89,6 +89,8 @@ def send_coap_put_request(bin_id, path, payload):
         return False
 
     try:
+        # replace fe80:: with fd00:: for local testing
+        coap_server_address = (coap_server_address[0].replace('fe80::', 'fd00::'), coap_server_address[1])
         client = HelperClient(server=coap_server_address)
         response = client.put(path, payload)
         client.stop()
