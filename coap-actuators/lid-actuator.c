@@ -78,19 +78,19 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
             button_event_handler((button_hal_button_t *)data);
         }
 
-        // send the command to close the bin
+        if (send_command_flag) {
         // Prepare the CoAP PUT request
-        coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-        coap_set_header_uri_path(request, "/lid/state");
-        coap_set_payload(request, (uint8_t *)(lid_sensor_state ? "open" : "closed"),
+            coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+            coap_set_header_uri_path(request, "/lid/state");
+            coap_set_payload(request, (uint8_t *)(lid_sensor_state ? "open" : "closed"),
                          strlen(lid_sensor_state ? "open" : "closed"));
 
-        // Send the CoAP request to the lid sensor address
-        COAP_BLOCKING_REQUEST(&lid_sensor.address, request, client_chunk_handler);
-        printf("Lid sensor state update sent: %d\n", lid_sensor_state);
+            // Send the CoAP request to the lid sensor address
+            COAP_BLOCKING_REQUEST(&lid_sensor.address, request, client_chunk_handler);
+            printf("Lid sensor state update sent: %d\n", lid_sensor_state);
 
-        // Reset the send command flag
-        send_command_flag = 0;
+            // Reset the send command flag
+            send_command_flag = 0;
         }
     }
 
