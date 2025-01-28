@@ -67,8 +67,6 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
 
     // Register the sensor configuration resources
     coap_activate_resource(&lid_sensor_config, lid_sensor.resource_path);
-    coap_activate_resource(&scale_sensor_config, scale_sensor.resource_path);
-    coap_activate_resource(&waste_level_sensor_config, waste_level_sensor.resource_path);
 
     // Initialize button handling
     button_hal_init();

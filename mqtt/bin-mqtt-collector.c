@@ -459,65 +459,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
   		etimer_reset(&periodic_timer);
       }
 
-      if (state == STATE_CONFIG_RECEIVED) {
- 		printf("Configuration received. Fetching CoAP data...\n");
-
-          if (send_config_flag) {
-        // 1. Send Compactor Sensor Address to Compactor Actuator
-        if (strlen(compactor_actuator_uri) > 0 && strlen(compactor_sensor_uri) > 0) {
-            printf("Sending compactor sensor address to actuator: %s\n", compactor_actuator_uri);
-
-            coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-            coap_set_header_uri_path(request, "/compactor/config");
-            coap_set_payload(request, (uint8_t *)compactor_sensor_uri, strlen(compactor_sensor_uri));
-
-            printf("Payload for compactor actuator: %s\n", compactor_sensor_uri);
-            COAP_BLOCKING_REQUEST(&compactor_actuator_endpoint, request, client_chunk_handler);
-
-            printf("Compactor actuator configuration sent.\n");
-        } else {
-            printf("Compactor actuator or sensor URI missing. Skipping compactor configuration.\n");
-        }
-
-// 2. Send Sensor Addresses to Lid Actuator Individually
-if (strlen(lid_actuator_uri) > 0) {
-    printf("Sending individual sensor addresses to lid actuator: %s\n", lid_actuator_uri);
-
-    // 1. Send Lid Sensor Address
-    if (strlen(lid_sensor_uri) > 0) {
-        printf("Sending Lid Sensor address to lid actuator: %s\n", lid_sensor_uri);
-
-        // Prepare the CoAP PUT request
-        coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-        coap_set_header_uri_path(request, "/lid/config");
-        coap_set_payload(request, (uint8_t *)lid_sensor_uri, strlen(lid_sensor_uri));
-
-        // Send the CoAP request
-        COAP_BLOCKING_REQUEST(&lid_actuator_endpoint, request, client_chunk_handler);
-        printf("Lid Sensor configuration sent to lid actuator.\n");
-    } else {
-        printf("No URI configured for Lid Sensor. Skipping configuration.\n");
-    }
-
-
-	} else {
-    	printf("Lid actuator URI missing. Skipping lid configuration.\n");
-	}
-
-
-        send_config_flag = 0; // Clear the flag after sending all configurations
-    }
-
 	  if (state == STATE_CONFIG_RECEIVED) {
-            printf("Reading compactor actuator address from actuator: %s\n", compactor_actuator_uri);
-
-            // Prepare CoAP GET request to read configuration
-            coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-            coap_set_header_uri_path(request, "/compactor/config");
-
-            COAP_BLOCKING_REQUEST(&compactor_actuator_endpoint, request, compactor_config_read_callback);
-            printf("Compactor configuration read request sent.\n");
-
   			printf("Fetching Compactor State...\n");
   			coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
  			coap_set_header_uri_path(request, "/compactor/active");

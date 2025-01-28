@@ -114,7 +114,14 @@ def check_waste_level():
             else:
                 logging.info(f"Compactor is already active for bin {bin['bin_id']}. Skipping CoAP request.")
 
-# send configuration over coap to 
+# send configuration over coap to compactor actuator and lid actuator (FOR SIMULATION PURPOSES ONLY)
+def send_configuration_over_coap():
+    bins = parse_config_xml()
+    for bin_id, bin_data in bins.items():
+        # Send configuration to compactor actuator
+        send_coap_put_request(bin_id, "compactor/config", f"{bin_data['compactor_server_address']}")
+        # Send configuration to lid actuator
+        send_coap_put_request(bin_id, "lid/config", f"{bin_data['lid_server_address']}")
 
 # Scheduled task for polling
 scheduler = BackgroundScheduler()
