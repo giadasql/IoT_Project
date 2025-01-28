@@ -488,7 +488,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
             send_aggregated_mqtt_message();
 		}
 
-      }
+
 
       if (state == STATE_DISCONNECTED) {
         printf("Disconnected. Retrying...\n");
