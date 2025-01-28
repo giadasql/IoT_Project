@@ -8,8 +8,10 @@ import xml.etree.ElementTree as ET
 # Configuration
 DATABASE_CONFIG = {
     'host': 'localhost',
-    'user': 'iot-project',
-    'password': 'iot-password',
+    'user': 'root',
+    # 'user': 'iot-project',
+    'password': 'moka',
+    # 'password': 'iot-password',
     'database': 'scrap'
 }
 
@@ -58,7 +60,7 @@ def fetch_transaction_data():
     try:
         connection = mysql.connector.connect(**DATABASE_CONFIG)
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM bins_rfid_transactions")
+        cursor.execute("SELECT * FROM bins_rfid_transactions ORDER BY end_time DESC")
         transactions = cursor.fetchall()
         cursor.close()
         connection.close()
@@ -111,6 +113,8 @@ def check_waste_level():
                 send_coap_put_request(bin['bin_id'], "compactor/active", "true")
             else:
                 logging.info(f"Compactor is already active for bin {bin['bin_id']}. Skipping CoAP request.")
+
+# send configuration over coap to 
 
 # Scheduled task for polling
 scheduler = BackgroundScheduler()
