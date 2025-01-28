@@ -77,7 +77,11 @@ def send_coap_put_request(bin_id, path, payload):
         return False
 
     coap_server_address = None
-    if path.startswith('/compactor'):
+    if path.startswith('/compactor/config'):
+        coap_server_address = (bins[bin_id]['compactor_actuator_address'], 5683)
+    elif path.startswith('/lid/config'):
+        coap_server_address = (bins[bin_id]['lid_actuator_address'], 5683)
+    elif path.startswith('/compactor'):
         coap_server_address = (bins[bin_id]['compactor_server_address'], 5683)
     elif path.startswith('/lid'):
         coap_server_address = (bins[bin_id]['lid_server_address'], 5683)
@@ -122,6 +126,9 @@ def send_configuration_over_coap():
         send_coap_put_request(bin_id, "compactor/config", f"{bin_data['compactor_server_address']}")
         # Send configuration to lid actuator
         send_coap_put_request(bin_id, "lid/config", f"{bin_data['lid_server_address']}")
+        
+# Send configuration to actuators on startup
+send_configuration_over_coap()
 
 # Scheduled task for polling
 scheduler = BackgroundScheduler()
