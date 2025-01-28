@@ -268,10 +268,10 @@
                         <button class="btn btn-danger d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/compactor/active', 'false')">
                             <i class="fas fa-times me-2"></i> Deactivate Compactor
                         </button>
-                        <button class="btn btn-primary d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/state', '1')">
+                        <button class="btn btn-primary d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/state', 'open')">
                             <i class="fas fa-door-open me-2"></i> Open Lid
                         </button>
-                        <button class="btn btn-secondary d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/state', '0')">
+                        <button class="btn btn-secondary d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/state', 'closed')">
                             <i class="fas fa-door-closed me-2"></i> Close Lid
                         </button>
                     </div>
