@@ -6,22 +6,22 @@
 #include <string.h>
 
 // Waste level sensor state
-static float waste_level = 0.0; // Initial waste level (percentage)
+static int waste_level = 0; // Initial waste level (percentage)
 
 // Conversion functions for the waste level sensor
 static void waste_level_to_string(char *buffer, size_t size, void *state) {
-    snprintf(buffer, size, "%.2f", *(float *)state); // Format as a percentage with 2 decimal places
+    snprintf(buffer, size, "%.2d", *(int *)state); // Format as a percentage with 2 decimal places
 }
 
 static void waste_level_update_state(const char *payload, void *state) {
-    *(float *)state += atof(payload); // Convert payload string to float and add to the current value
+    *(int *)state += atoi(payload); // Convert payload string to float and add to the current value
 
-    if (*(float *)state < 0.0) {
-        *(float *)state = 0.0; // Clamp to minimum 0%
-    } else if (*(float *)state > 100.0) {
-        *(float *)state = 100.0; // Clamp to maximum 100%
+    if (*(int *)state < 0.0) {
+        *(int *)state = 0.0; // Clamp to minimum 0%
+    } else if (*(int *)state > 100.0) {
+        *(int *)state = 100.0; // Clamp to maximum 100%
     }
-    printf("Waste level updated to: %.2f%%\n", *(float *)state);
+    printf("Waste level updated to: %.2d%%\n", *(int *)state);
 }
 
 // Define the generic sensor structure
