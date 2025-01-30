@@ -114,7 +114,7 @@ def check_waste_level():
             if bin['compactor_state'] != 'active':  # Check if compactor is not already active
                 logging.warning(f"Waste level exceeded in bin {bin['bin_id']}: {bin['waste_level']}%")
                 # Send CoAP PUT request to activate compactor
-                send_coap_put_request(bin['bin_id'], "compactor/active", "true")
+                send_coap_put_request(bin['bin_id'], "/compactor/active", "true")
             else:
                 logging.info(f"Compactor is already active for bin {bin['bin_id']}. Skipping CoAP request.")
 
