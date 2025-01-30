@@ -1,5 +1,8 @@
 #include "contiki.h"
 #include "coap-engine.h"
+#include "net/ipv6/uip.h"
+#include "net/ipv6/uiplib.h"
+#include "net/ipv6/uip-ds6.h"
 
 // Declare the resource from the resource file
 extern coap_resource_t compactor_active_sensor;

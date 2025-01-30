@@ -1,6 +1,6 @@
 <bins>
     <bin id="bin01">
-        <collector_address>fe80::204:4:4:4</collector_address>cd 
+        <collector_address>fe80::f6ce:367b:9c44:e26a</collector_address>cd
         <lid_server_address>fe80::202:2:2:2</lid_server_address>
         <lid_actuator_address>fe80::209:9:9:9</lid_actuator_address>
         <compactor_server_address>fe80::205:5:5:5</compactor_server_address>
