@@ -37,6 +37,9 @@ PROCESS_THREAD(scale_sensor_process, ev, data)
   printf("Starting Scale Sensor...\n");
   coap_activate_resource(&scale_sensor, "scale/value");
 
+  get_local_ipv6_address(local_ipv6_address, sizeof(local_ipv6_address));
+  printf("Local IPv6 Address: %s\n", local_ipv6_address);
+
   while (1) {
     PROCESS_WAIT_EVENT(); // Wait for events (e.g., CoAP requests)
 

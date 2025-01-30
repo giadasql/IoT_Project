@@ -41,6 +41,8 @@ PROCESS_THREAD(lid_sensor_process, ev, data) {
   // Activate the CoAP resource
   coap_activate_resource(&lid_sensor, "lid/state");
   coap_activate_resource(&rfid_reader, "rfid/value");
+    get_local_ipv6_address(local_ipv6_address, sizeof(local_ipv6_address));
+    printf("Local IPv6 Address: %s\n", local_ipv6_address);
 
   while(1) {
     PROCESS_WAIT_EVENT(); // Wait for events (CoAP requests)

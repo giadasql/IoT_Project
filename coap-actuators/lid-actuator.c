@@ -92,6 +92,9 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
     // Initialize button handling
     button_hal_init();
 
+      get_local_ipv6_address(local_ipv6_address, sizeof(local_ipv6_address));
+    printf("Local IPv6 Address: %s\n", local_ipv6_address);
+
     while (1) {
         PROCESS_WAIT_EVENT();
 
