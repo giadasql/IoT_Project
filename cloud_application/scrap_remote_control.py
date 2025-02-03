@@ -8,15 +8,17 @@ import xml.etree.ElementTree as ET
 # Configuration
 DATABASE_CONFIG = {
     'host': 'localhost',
-    #'user': 'root',
-    'user': 'iot-project',
-    #'password': 'moka',
-    'password': 'iot-password',
+    'user': 'root',
+    #'user': 'iot-project',
+    'password': 'moka',
+    #'password': 'iot-password',
     'database': 'scrap'
 }
 
 WASTE_LEVEL_THRESHOLD = 80.0  # Set your waste level threshold here
-POLLING_INTERVAL = 2  # Polling interval in seconds
+POLLING_INTERVAL = 1  # Polling interval in seconds
+
+compactor_activated = False
 
 # Parse the config.xml file to get CoAP server addresses
 def parse_config_xml():
@@ -106,17 +108,44 @@ def send_coap_put_request(bin_id, path, payload):
         logging.error(f"CoAP request failed: {e}")
         return False
 
+# Function to insert an alarm into the database
+def insert_alarm(bin_id, message):
+    try:
+        connection = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = connection.cursor()
+        cursor.execute("INSERT INTO alarms (bin_id, time, message, acknowledged) VALUES (%s, NOW(), %s, FALSE)", (bin_id, message))
+        connection.commit()
+        cursor.close()
+        connection.close()
+    except mysql.connector.Error as err:
+        logging.error(f"Database error: {err}")
+
 # Function to check waste level and log if above threshold
 def check_waste_level():
     bins = fetch_bin_data()
     for bin in bins:
         if bin['waste_level'] > WASTE_LEVEL_THRESHOLD:
+            global compactor_activated
             if bin['compactor_state'] != 'active':  # Check if compactor is not already active
-                logging.warning(f"Waste level exceeded in bin {bin['bin_id']}: {bin['waste_level']}%")
-                # Send CoAP PUT request to activate compactor
-                send_coap_put_request(bin['bin_id'], "/compactor/active", "true")
+                if compactor_activated: # if compactor was already activated before but waste level is still above threshold
+                    # check if there is an alarm for this bin already
+                    alarms = fetch_alarm_data()
+                    alarm_exists = False
+                    for alarm in alarms:
+                        if alarm['bin_id'] == bin['bin_id'] and not alarm['acknowledged']:
+                            alarm_exists = True
+                            break
+                    if not alarm_exists:
+                        insert_alarm(bin['bin_id'], f"Waste level exceeded in bin {bin['bin_id']}: {bin['waste_level']}%")
+                else:
+                    logging.warning(f"Waste level exceeded in bin {bin['bin_id']}: {bin['waste_level']}%")
+                    # Send CoAP PUT request to activate compactor
+                    send_coap_put_request(bin['bin_id'], "/compactor/active", "true")
+                    compactor_activated = True
             else:
                 logging.info(f"Compactor is already active for bin {bin['bin_id']}. Skipping CoAP request.")
+        else:
+            compactor_activated = False
 
 # send configuration over coap to compactor actuator and lid actuator (FOR SIMULATION PURPOSES ONLY)
 def send_configuration_over_coap():
@@ -128,7 +157,7 @@ def send_configuration_over_coap():
         send_coap_put_request(bin_id, "/lid/config", f"{bin_data['lid_server_address']}")
         
 # Send configuration to actuators on startup
-send_configuration_over_coap()
+#send_configuration_over_coap()
 
 # Scheduled task for polling
 scheduler = BackgroundScheduler()
@@ -167,6 +196,49 @@ def handle_coap_request():
         return jsonify({'message': 'CoAP request sent successfully'}), 200
     else:
         return jsonify({'message': 'CoAP request failed'}), 500
+
+
+    # Function to fetch alarms from the database
+def fetch_alarm_data():
+    try:
+        connection = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM alarms ORDER BY time DESC")
+        alarms = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return alarms
+    except mysql.connector.Error as err:
+        logging.error(f"Database error: {err}")
+        return []
+
+# Flask route to serve alarm data as JSON
+@app.route('/api/alarms')
+def get_alarms():
+    alarms = fetch_alarm_data()
+    return jsonify(alarms)
+
+# Flask route to acknowledge an alarm
+@app.route('/api/acknowledge_alarm', methods=['POST'])
+def acknowledge_alarm():
+    data = request.json
+    alarm_id = data.get('alarm_id')
+
+    if not alarm_id:
+        return jsonify({'message': 'Alarm ID is required'}), 400
+
+    try:
+        connection = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = connection.cursor()
+        cursor.execute("UPDATE alarms SET acknowledged = TRUE WHERE alarm_id = %s", (alarm_id,))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return jsonify({'message': 'Alarm acknowledged successfully'}), 200
+    except mysql.connector.Error as err:
+        logging.error(f"Database error: {err}")
+        return jsonify({'message': 'Failed to acknowledge alarm'}), 500
+
 
 # Run the Flask app
 if __name__ == '__main__':

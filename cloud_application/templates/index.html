@@ -232,6 +232,11 @@
                 Log
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="alarms-tab" data-bs-toggle="tab" data-bs-target="#alarms" type="button" role="tab" aria-controls="alarms" aria-selected="false">
+                Alarms
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content mt-4" id="binTabsContent">
@@ -324,6 +329,29 @@
                             <th>Weight Difference (kg)</th>
                             <th>Start Time</th>
                             <th>End Time</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alarm Tab -->
+        <div class="tab-pane fade" id="alarms" role="tabpanel" aria-labelledby="alarms-tab">
+            <div class="card mb-4 mt-3 shadow-sm border-0">
+                <div class="card-body">
+                    <table id="alarm-table" class="table table-striped text-center align-middle">
+                        <thead>
+                        <tr>
+                            <th>Alarm ID</th>
+                            <th>Time</th>
+                            <th>Bin ID</th>
+                            <th>Message</th>
+                            <th>Status</th>
+                            <th>Action</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -445,6 +473,59 @@
     // Initial load
     updateTransactionTable();
     updateTable();
+</script>
+
+<script>
+    // Function to fetch and update the alarms table
+    function updateAlarmTable() {
+        fetch('/api/alarms')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.querySelector('#alarm-table tbody');
+                tableBody.innerHTML = ''; // Clear existing rows
+
+                data.forEach(alarm => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${alarm.alarm_id}</td>
+                        <td>${alarm.time}</td>
+                        <td>${alarm.bin_id}</td>
+                        <td>${alarm.message}</td>
+                        <td class="fw-bold ${alarm.acknowledged ? 'text-success' : 'text-danger'}">
+                            ${alarm.acknowledged ? 'Acknowledged' : 'Not Acknowledged'}
+                        </td>
+                        <td>
+                            ${alarm.acknowledged ? '' : `<button class="btn btn-warning" onclick="acknowledgeAlarm(${alarm.alarm_id})">Acknowledge</button>`}
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching alarm data:', error));
+    }
+
+    // Function to acknowledge an alarm
+    function acknowledgeAlarm(alarm_id) {
+        fetch('/api/acknowledge_alarm', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ alarm_id }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.message);
+                updateAlarmTable(); // Refresh the table after acknowledging
+            })
+            .catch(error => console.error('Error acknowledging alarm:', error));
+    }
+
+    // Update the alarm table every 5 seconds
+    setInterval(updateAlarmTable, 5000);
+
+    // Initial load
+    updateAlarmTable();
 </script>
 </body>
 </html>
