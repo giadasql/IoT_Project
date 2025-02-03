@@ -10,7 +10,6 @@
 #include "sys/ctimer.h"
 #include "dev/leds.h"
 #include "jsmn.h"
-#include "time_utils.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,12 +30,8 @@ static coap_endpoint_t lid_server_endpoint;
 static coap_endpoint_t compactor_server_endpoint;
 static coap_endpoint_t scale_server_endpoint;
 static coap_endpoint_t waste_level_server_endpoint;
-static coap_endpoint_t compactor_actuator_endpoint;
-static coap_endpoint_t lid_actuator_endpoint;
 
-static char compactor_actuator_uri[64] = {0};
 static char compactor_sensor_uri[64] = {0};
-static char lid_actuator_uri[64] = {0};
 static char lid_sensor_uri[64] = {0};
 static char waste_level_sensor_uri[64] = {0};
 static char scale_sensor_uri[64] = {0};
@@ -82,35 +77,16 @@ static collector_data_t collector_data;
 PROCESS(coap_to_mqtt_process, "CoAP-to-MQTT Bridge");
 AUTOSTART_PROCESSES(&coap_to_mqtt_process);
 
-/* Helper Function: Get Local IPv6 Address */
-static void get_local_ipv6_address(char *buffer, size_t buffer_size) {
-    uip_ds6_addr_t *addr = NULL;
-
-    // Iterate through all IPv6 addresses
-    for (addr = uip_ds6_if.addr_list; addr < uip_ds6_if.addr_list + UIP_DS6_ADDR_NB; addr++) {
-        // Check if the address is used and is a link-local address
-        if (addr->isused && uip_is_addr_linklocal(&addr->ipaddr)) {
-            uiplib_ipaddr_snprint(buffer, buffer_size, &addr->ipaddr);
-            return;
-        }
-    }
-
-    // If no link-local address is found, set to "unknown"
-    snprintf(buffer, buffer_size, "unknown");
-}
-
 
 /* Helper Function: Check if a token equals a string */
-static int
-jsmn_token_equals(const char *json, const jsmntok_t *tok, const char *key)
+static int jsmn_token_equals(const char *json, const jsmntok_t *tok, const char *key)
 {
   return (tok->type == JSMN_STRING &&
           (int)strlen(key) == tok->end - tok->start &&
           strncmp(json + tok->start, key, tok->end - tok->start) == 0);
 }
 
-void
-client_chunk_handler(coap_message_t *response)
+void client_chunk_handler(coap_message_t *response)
 {
   const uint8_t *chunk;
 
@@ -124,127 +100,81 @@ client_chunk_handler(coap_message_t *response)
   printf("|%.*s\n", len, (char *)chunk);
 }
 
-
-
-/* Publish Handler */
 static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk, uint16_t chunk_len) {
-  printf("Pub Handler: topic='%s' (len=%u), chunk_len=%u\n", topic, topic_len, chunk_len);
+    printf("Pub Handler: topic='%s' (len=%u), chunk_len=%u\n", topic, topic_len, chunk_len);
 
-  if (strcmp(topic, CONFIG_RESPONSE_TOPIC) == 0) {
+    if (strcmp(topic, CONFIG_RESPONSE_TOPIC) != 0) {
+        return;
+    }
+
     char received_collector_address[64] = {0};
     char received_bin_id[64] = {0};
     char lid_server_address[64] = {0};
     char compactor_server_address[64] = {0};
     char scale_server_address[64] = {0};
     char waste_level_server_address[64] = {0};
-    char compactor_actuator_address[64] = {0};
-    char lid_actuator_address[64] = {0};
+
+    struct {
+        char *key;
+        char *buffer;
+        size_t size;
+    } config_mappings[] = {
+        {"collector_address", received_collector_address, sizeof(received_collector_address)},
+        {"bin_id", received_bin_id, sizeof(received_bin_id)},
+        {"lid_server_address", lid_server_address, sizeof(lid_server_address)},
+        {"compactor_server_address", compactor_server_address, sizeof(compactor_server_address)},
+        {"scale_server_address", scale_server_address, sizeof(scale_server_address)},
+        {"waste_level_server_address", waste_level_server_address, sizeof(waste_level_server_address)}
+    };
 
     jsmn_parser parser;
     jsmntok_t tokens[32]; // Adjust size based on expected tokens
-    int token_count;
-
-    // Initialize JSMN parser
     jsmn_init(&parser);
-    token_count = jsmn_parse(&parser, (const char *)chunk, chunk_len, tokens, sizeof(tokens) / sizeof(tokens[0]));
+    int token_count = jsmn_parse(&parser, (const char *)chunk, chunk_len, tokens, sizeof(tokens) / sizeof(tokens[0]));
 
-    if (token_count < 0) {
-      printf("Failed to parse JSON: %d\n", token_count);
-      return;
-    }
-
-    /* Check if the root element is an object */
     if (token_count < 1 || tokens[0].type != JSMN_OBJECT) {
-      printf("Expected JSON object as root\n");
-      return;
+        printf("Invalid JSON format\n");
+        return;
     }
 
-    /* Loop through all keys in the JSON object */
-    for (int i = 1; i < token_count; i++) {
-      if (jsmn_token_equals((const char *)chunk, &tokens[i], "collector_address")) {
-        strncpy(received_collector_address, (const char *)chunk + tokens[i + 1].start,
-                tokens[i + 1].end - tokens[i + 1].start);
-        received_collector_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
-        i++; // Skip the value token
-      }  else if (jsmn_token_equals((const char *)chunk, &tokens[i], "bin_id")) {
-            strncpy(received_bin_id, (const char *)chunk + tokens[i + 1].start,
-                tokens[i + 1].end - tokens[i + 1].start);
-                i++;
-   	 }
-      else if (jsmn_token_equals((const char *)chunk, &tokens[i], "lid_server_address")) {
-        strncpy(lid_server_address, (const char *)chunk + tokens[i + 1].start,
-                tokens[i + 1].end - tokens[i + 1].start);
-        lid_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
-        i++; // Skip the value token
-      } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "compactor_server_address")) {
-        strncpy(compactor_server_address, (const char *)chunk + tokens[i + 1].start,
-                tokens[i + 1].end - tokens[i + 1].start);
-        compactor_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
-        i++; // Skip the value token
-      }
-	else if (jsmn_token_equals((const char *)chunk, &tokens[i], "scale_server_address")) {
-        strncpy(scale_server_address, (const char *)chunk + tokens[i + 1].start,
-                tokens[i + 1].end - tokens[i + 1].start);
-        scale_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
-        i++; // Skip the value token
+    for (int i = 1; i < token_count - 1; i++) {
+        for (size_t j = 0; j < sizeof(config_mappings) / sizeof(config_mappings[0]); j++) {
+            if (jsmn_token_equals((const char *)chunk, &tokens[i], config_mappings[j].key)) {
+                size_t len = tokens[i + 1].end - tokens[i + 1].start;
+                len = len < config_mappings[j].size ? len : config_mappings[j].size - 1;
+                strncpy(config_mappings[j].buffer, (const char *)chunk + tokens[i + 1].start, len);
+                config_mappings[j].buffer[len] = '\0';
+                i++; // Skip the value token
+                break;
+            }
+        }
     }
-	else if (jsmn_token_equals((const char *)chunk, &tokens[i], "waste_level_server_address")) {
-        strncpy(waste_level_server_address, (const char *)chunk + tokens[i + 1].start,
-                tokens[i + 1].end - tokens[i + 1].start);
-        waste_level_server_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
-        i++; // Skip the value token
-    } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "compactor_actuator_address")) {
-        strncpy(compactor_actuator_address, (const char *)chunk + tokens[i + 1].start,
-                tokens[i + 1].end - tokens[i + 1].start);
-        compactor_actuator_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
-        i++; // Skip the value token
-    } else if (jsmn_token_equals((const char *)chunk, &tokens[i], "lid_actuator_address")) {
-        strncpy(lid_actuator_address, (const char *)chunk + tokens[i + 1].start,
-                tokens[i + 1].end - tokens[i + 1].start);
-        lid_actuator_address[tokens[i + 1].end - tokens[i + 1].start] = '\0';
-        i++; // Skip the value token
-    }
-  }
-      /* Verify and use the parsed data */
+
     if (strcmp(received_collector_address, local_ipv6_address) == 0) {
-		printf("Received configuration for Bin ID: %s\n", received_bin_id);
-  		printf("Received Lid Server Address: %s\n", lid_server_address);
-  		printf("Received Compactor Server Address: %s\n", compactor_server_address);
-        printf("Received Scale Server Address: %s\n", scale_server_address);
-		printf("Received Waste Level Server Address: %s\n", waste_level_server_address);
-        printf("Received Compactor Actuator Address: %s\n", compactor_actuator_address);
-        printf("Received Lid Actuator Address: %s\n", lid_actuator_address);
+        printf("Received configuration for Bin ID: %s\n", received_bin_id);
+        printf("Lid Server Address: %s\n", lid_server_address);
+        printf("Compactor Server Address: %s\n", compactor_server_address);
+        printf("Scale Server Address: %s\n", scale_server_address);
+        printf("Waste Level Server Address: %s\n", waste_level_server_address);
 
-  		// Parse the CoAP server addresses
         strncpy(bin_id, received_bin_id, sizeof(bin_id));
-  		coap_endpoint_parse(lid_server_address, strlen(lid_server_address), &lid_server_endpoint);
-		coap_endpoint_parse(compactor_server_address, strlen(compactor_server_address), &compactor_server_endpoint);
+        coap_endpoint_parse(lid_server_address, strlen(lid_server_address), &lid_server_endpoint);
+        coap_endpoint_parse(compactor_server_address, strlen(compactor_server_address), &compactor_server_endpoint);
         coap_endpoint_parse(scale_server_address, strlen(scale_server_address), &scale_server_endpoint);
         coap_endpoint_parse(waste_level_server_address, strlen(waste_level_server_address), &waste_level_server_endpoint);
-        coap_endpoint_parse(compactor_actuator_address, strlen(compactor_actuator_address), &compactor_actuator_endpoint);
-        coap_endpoint_parse(lid_actuator_address, strlen(lid_actuator_address), &lid_actuator_endpoint);
-        
 
-        // Store compactor addresses and set flag
-      	strncpy(compactor_sensor_uri, compactor_server_address, sizeof(compactor_sensor_uri));
-     	strncpy(compactor_actuator_uri, compactor_actuator_address, sizeof(compactor_actuator_uri));
+        strncpy(compactor_sensor_uri, compactor_server_address, sizeof(compactor_sensor_uri));
         strncpy(lid_sensor_uri, lid_server_address, sizeof(lid_sensor_uri));
-        strncpy(lid_actuator_uri, lid_actuator_address, sizeof(lid_actuator_uri));
         strncpy(scale_sensor_uri, scale_server_address, sizeof(scale_sensor_uri));
         strncpy(waste_level_sensor_uri, waste_level_server_address, sizeof(waste_level_sensor_uri));
 
-      	send_config_flag = 1;
-
-
-  		state = STATE_CONFIG_RECEIVED;
+        send_config_flag = 1;
+        state = STATE_CONFIG_RECEIVED;
     } else {
-      printf("Response is not for this collector. Ignored.\n");
+        printf("Response is not for this collector. Ignored.\n");
     }
 }
-}
 
-
-/*---------------------------------------------------------------------------*/
 /* MQTT Event Handler */
 static void mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
 {
@@ -286,7 +216,6 @@ static void mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data
   }
 }
 
-/*---------------------------------------------------------------------------*/
 /* Helper Function: Parse JSON Payload */
 static void parse_payload(const uint8_t *payload, const char *sensor_name, sensor_data_t *sensor_data) {
     jsmn_parser parser;
@@ -310,44 +239,12 @@ static void parse_payload(const uint8_t *payload, const char *sensor_name, senso
     }
 }
 
-/* CoAP Response Callbacks */
-static void client_callback_lid_state(coap_message_t *response) {
+static void client_callback(coap_message_t *response, sensor_data_t *sensor, const char *sensor_name) {
     if (response) {
-        parse_payload(response->payload, "Lid Sensor", &collector_data.lid_sensor);
+        snprintf(sensor->value, sizeof(sensor->value), "%s", (char *)response->payload);
+        printf("%s updated to: %s\n", sensor_name, sensor->value);
     } else {
-        printf("CoAP request for Lid Sensor timed out.\n");
-    }
-}
-
-static void client_callback_rfid_value(coap_message_t *response) {
-    if (response) {
-        parse_payload(response->payload, "Rfid", &collector_data.rfid);
-    } else {
-        printf("CoAP request for Rfid timed out.\n");
-    }
-}
-
-static void client_callback_compactor_state(coap_message_t *response) {
-    if (response) {
-        parse_payload(response->payload, "Compactor Sensor", &collector_data.compactor_sensor);
-    } else {
-        printf("CoAP request for Compactor Sensor timed out.\n");
-    }
-}
-
-static void client_callback_scale_state(coap_message_t *response) {
-    if (response) {
-        parse_payload(response->payload, "Scale Sensor", &collector_data.scale);
-    } else {
-        printf("CoAP request for Scale Sensor timed out.\n");
-    }
-}
-
-static void client_callback_waste_level_state(coap_message_t *response) {
-    if (response) {
-        parse_payload(response->payload, "Waste Level Sensor", &collector_data.waste_level_sensor);
-    } else {
-        printf("CoAP request for Waste Level Sensor timed out.\n");
+        printf("CoAP request for %s timed out.\n", sensor_name);
     }
 }
 
@@ -355,31 +252,45 @@ static bool have_connectivity(void) {
   return uip_ds6_get_global(ADDR_PREFERRED) != NULL && uip_ds6_defrt_choose() != NULL;
 }
 
-
 /* Publish Aggregated MQTT Message */
 static void send_aggregated_mqtt_message(void) {
-  	// use point to separate the decimal part from the integer part
-  	setlocale(LC_NUMERIC, "C");
+    setlocale(LC_NUMERIC, "C");
 
     snprintf(pub_msg, sizeof(pub_msg),
              "{\"bin_id\":\"%s\","
-             "\"rfid\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
-             "\"lid_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
-             "\"compactor_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
-             "\"scale\":{\"value\":\"%s\",\"time_updated\":\"%s\"},"
-             "\"waste_level_sensor\":{\"value\":\"%s\",\"time_updated\":\"%s\"}}",
+             "\"rfid\":\"%s\","
+             "\"lid_sensor\":\"%s\","
+             "\"compactor_sensor\":\"%s\","
+             "\"scale\":\"%s\","
+             "\"waste_level_sensor\":\"%s\"}",
              bin_id,
-             collector_data.rfid.value, collector_data.rfid.time_updated,
-             collector_data.lid_sensor.value, collector_data.lid_sensor.time_updated,
-             collector_data.compactor_sensor.value, collector_data.compactor_sensor.time_updated,
-             collector_data.scale.value, collector_data.scale.time_updated,
-             collector_data.waste_level_sensor.value, collector_data.waste_level_sensor.time_updated);
+             collector_data.rfid.value,
+             collector_data.lid_sensor.value,
+             collector_data.compactor_sensor.value,
+             collector_data.scale.value,
+             collector_data.waste_level_sensor.value);
 
     mqtt_publish(&conn, NULL, "bins", (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
     printf("Published aggregated data to MQTT: %s\n", pub_msg);
 }
 
-/*---------------------------------------------------------------------------*/
+/* Helper Function: Get Local IPv6 Address */
+static void get_local_ipv6_address(char *buffer, size_t buffer_size) {
+    uip_ds6_addr_t *addr = NULL;
+
+    // Iterate through all IPv6 addresses
+    for (addr = uip_ds6_if.addr_list; addr < uip_ds6_if.addr_list + UIP_DS6_ADDR_NB; addr++) {
+        // Check if the address is used and is a link-local address
+        if (addr->isused && uip_is_addr_linklocal(&addr->ipaddr)) {
+            uiplib_ipaddr_snprint(buffer, buffer_size, &addr->ipaddr);
+            return;
+        }
+    }
+
+    // If no link-local address is found, set to "unknown"
+    snprintf(buffer, buffer_size, "unknown");
+}
+
 /* Main Process */
 PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 {
@@ -391,8 +302,6 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
   etimer_set(&periodic_timer, CLOCK_SECOND * 2);
 
   get_local_ipv6_address(local_ipv6_address, sizeof(local_ipv6_address));
-    printf("Local IPv6 Address: %s\n", local_ipv6_address);
-
 
   while(1) {
     PROCESS_YIELD();
@@ -421,9 +330,7 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
         printf("Requesting CoAP server configuration...\n");
 
   		// Publish configuration request message
- 		 snprintf(pub_msg, sizeof(pub_msg),
-           "{\"collector_address\":\"%s\"}",
-           local_ipv6_address);
+ 		 snprintf(pub_msg, sizeof(pub_msg), "{\"collector_address\":\"%s\"}", local_ipv6_address);
 
  		 mqtt_status_t status = mqtt_publish(&conn, NULL, CONFIG_REQUEST_TOPIC,
                                       (uint8_t *)pub_msg, strlen(pub_msg),
@@ -439,35 +346,30 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
       }
 
 	  if (state == STATE_CONFIG_RECEIVED) {
-  			printf("Fetching Compactor State...\n");
-  			coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
- 			coap_set_header_uri_path(request, "/compactor/active");
- 			COAP_BLOCKING_REQUEST(&compactor_server_endpoint, request, client_callback_compactor_state);
+        printf("Fetching sensor states...\n");
 
- 		 	printf("Fetching Lid State...\n");
- 		 	coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
- 		 	coap_set_header_uri_path(request, "/lid/state");
- 		 	COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback_lid_state);
+        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+        coap_set_header_uri_path(request, "/compactor/active");
+        COAP_BLOCKING_REQUEST(&compactor_server_endpoint, request, client_callback, &collector_data.compactor_sensor);
 
-            coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
- 		 	coap_set_header_uri_path(request, "/rfid/value");
- 		 	COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback_rfid_value);
+        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+        coap_set_header_uri_path(request, "/lid/open");
+        COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback, &collector_data.lid_sensor);
 
-			printf("Fetching Scale State...\n");
-            printf("Fetching Scale Sensor State...\n");
-            coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-            coap_set_header_uri_path(request, "/scale/value");
-            COAP_BLOCKING_REQUEST(&scale_server_endpoint, request, client_callback_scale_state);
+        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+        coap_set_header_uri_path(request, "/rfid/value");
+        COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback, &collector_data.rfid);
 
-            printf("Fetching Waste Level Sensor State...\n");
-            coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-            coap_set_header_uri_path(request, "/waste/level");
-            COAP_BLOCKING_REQUEST(&waste_level_server_endpoint, request, client_callback_waste_level_state);
+        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+        coap_set_header_uri_path(request, "/scale/value");
+        COAP_BLOCKING_REQUEST(&scale_server_endpoint, request, client_callback, &collector_data.scale);
 
-            send_aggregated_mqtt_message();
-		}
+        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+        coap_set_header_uri_path(request, "/waste/level");
+        COAP_BLOCKING_REQUEST(&waste_level_server_endpoint, request, client_callback, &collector_data.waste_level_sensor);
 
-
+        send_aggregated_mqtt_message();
+      }
 
       if (state == STATE_DISCONNECTED) {
         printf("Disconnected. Retrying...\n");
@@ -476,8 +378,6 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
       etimer_reset(&periodic_timer);
     }
-
-
   }
 
   PROCESS_END();

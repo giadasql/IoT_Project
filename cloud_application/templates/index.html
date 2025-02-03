@@ -267,16 +267,16 @@
                     <h3 class="mt-5 section-title">Control Panel</h3>
                     <!-- Control Panel -->
                     <div class="btn-group d-flex justify-content-between flex-wrap gap-3">
-                        <button class="btn btn-warning d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/compactor/active', 'true')">
+                        <button class="btn btn-warning d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/compactor/command', 'turn on')">
                             <i class="fas fa-check me-2"></i> Activate Compactor
                         </button>
-                        <button class="btn btn-danger d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/compactor/active', 'false')">
+                        <button class="btn btn-danger d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/compactor/command', 'turn off')">
                             <i class="fas fa-times me-2"></i> Deactivate Compactor
                         </button>
-                        <button class="btn btn-primary d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/state', 'open')">
+                        <button class="btn btn-primary d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/command', 'open')">
                             <i class="fas fa-door-open me-2"></i> Open Lid
                         </button>
-                        <button class="btn btn-secondary d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/state', 'closed')">
+                        <button class="btn btn-secondary d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/command', 'close')">
                             <i class="fas fa-door-closed me-2"></i> Close Lid
                         </button>
                     </div>

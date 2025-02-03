@@ -79,9 +79,9 @@ def send_coap_put_request(bin_id, path, payload):
         return False
 
     coap_server_address = None
-    if path.startswith('/compactor/config'):
+    if path.startswith('/compactor/config') or path.startswith('/compactor/command'):
         coap_server_address = (bins[bin_id]['compactor_actuator_address'], 5683)
-    elif path.startswith('/lid/config'):
+    elif path.startswith('/lid/config') or path.startswith('/lid/command'):
         coap_server_address = (bins[bin_id]['lid_actuator_address'], 5683)
     elif path.startswith('/compactor'):
         coap_server_address = (bins[bin_id]['compactor_server_address'], 5683)

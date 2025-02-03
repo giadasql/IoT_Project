@@ -12,7 +12,9 @@ extern coap_resource_t compactor_sensor_endpoint;
 extern coap_endpoint_t compactor_sensor_address;
 extern char compactor_sensor_endpoint_uri[64];
 
-
+extern coap_resource_t compactor_actuator_command;
+extern bool send_command_flag;
+extern bool value;
 
 // Shared variables for CoAP PUT operation
 static int coap_put_pending = 0;
@@ -40,24 +42,6 @@ void client_chunk_handler(coap_message_t *response) {
 PROCESS(compactor_actuator_process, "Compactor Actuator");
 AUTOSTART_PROCESSES(&compactor_actuator_process);
 
-static void get_local_ipv6_address(char *buffer, size_t buffer_size) {
-    uip_ds6_addr_t *addr = NULL;
-
-    // Iterate through all IPv6 addresses
-    for (addr = uip_ds6_if.addr_list; addr < uip_ds6_if.addr_list + UIP_DS6_ADDR_NB; addr++) {
-        // Check if the address is used and is a link-local address
-        if (addr->isused && uip_is_addr_linklocal(&addr->ipaddr)) {
-            uiplib_ipaddr_snprint(buffer, buffer_size, &addr->ipaddr);
-            return;
-        }
-    }
-
-    // If no link-local address is found, set to "unknown"
-    snprintf(buffer, buffer_size, "unknown");
-}
-
-static char local_ipv6_address[64];
-
 PROCESS_THREAD(compactor_actuator_process, ev, data)
 {
     PROCESS_BEGIN();
@@ -66,25 +50,27 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
 
     // Register the CoAP resource
     coap_activate_resource(&compactor_sensor_endpoint, "compactor/config");
+    coap_activate_resource(&compactor_actuator_command, "compactor/command");
 
     // Initialize button-hal
     button_hal_init();
 
-    get_local_ipv6_address(local_ipv6_address, sizeof(local_ipv6_address));
-    printf("Local IPv6 Address: %s\n", local_ipv6_address);
-
     while (1) {
         PROCESS_WAIT_EVENT();
-
-        printf("Device Process Event. Compactor Actuator. Address: %s\n", local_ipv6_address);
 
         if (ev == button_hal_press_event) {
             button_event_handler((button_hal_button_t *)data);
         }
 
         // Handle pending CoAP PUT request
-        if (coap_put_pending) {
-            printf("Sending CoAP PUT request to turn compactor ON.\n");
+        if (coap_put_pending || send_command_flag) {
+            bool value_to_send = value;
+            if (coap_put_pending) value_to_send = true;
+
+            printf("Sending CoAP PUT request to turn compactor %s.\n", value_to_send ? "ON" : "OFF");
+
+            char payload[16];
+            snprintf(payload, sizeof(payload), "%s", value_to_send ? "true" : "false");
 
             //const coap_endpoint_t compactor_address = get_compactor_sensor_address();
 
@@ -95,15 +81,17 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
                 // Prepare the CoAP PUT request
                 coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
                 coap_set_header_uri_path(request, "/compactor/active");
-                coap_set_payload(request, (uint8_t *)"true", strlen("true"));
+                coap_set_payload(request, (uint8_t *)payload, strlen(payload));
 
                 // Send the CoAP request
                 COAP_BLOCKING_REQUEST(&compactor_sensor_address, request, client_chunk_handler);
-                printf("CoAP PUT request sent to turn compactor ON.\n");
+                printf("CoAP PUT request sent to turn compactor %s.\n", value_to_send ? "ON" : "OFF");
             }
 
             coap_put_pending = 0; // Clear the pending flag
+            send_command_flag = 0; // Clear the command flag
         }
+
     }
 
     PROCESS_END();
