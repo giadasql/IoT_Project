@@ -302,7 +302,7 @@
                             </td>
                             <td>
                                     <span class="{{ 'text-success fw-bold' if bin.compactor_state == 'true' else 'text-danger fw-bold' }}">
-                                        {{ 'ACTIVE' if bin.compactor_state == 'true' else 'NOT ACTIVE' }}
+                                        {{ 'ACTIVE' if bin.compactor_state == 'on' else 'NOT ACTIVE' }}
                                     </span>
                             </td>
                             <td class="fw-bold">{{ bin.waste_level }}</td>

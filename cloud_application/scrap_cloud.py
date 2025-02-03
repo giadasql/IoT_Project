@@ -76,11 +76,11 @@ def update_current_state(cursor, bin_id, data):
     """
     cursor.execute(query, (
         bin_id,
-        data.get("rfid", {}).get("value"),
-        data.get("lid_sensor", {}).get("value"),
-        data.get("compactor_sensor", {}).get("value"),
-        data.get("waste_level_sensor", {}).get("value"),
-        data.get("scale", {}).get("value")
+        data.get("rfid"),
+        data.get("lid_sensor"),
+        data.get("compactor_sensor"),
+        data.get("waste_level_sensor"),
+        data.get("scale")
     ))
 
 # Log changes in the database
@@ -147,10 +147,9 @@ def handle_sensor_update(client, data):
         print("No bin_id found in update message. Skipping...")
         return
 
-    rfid = data.get("rfid", {}).get("value")
-    scale_weight = normalize_decimal(data.get("scale", {}).get("value"))
-    waste_level = normalize_decimal(data.get("waste_level_sensor", {}).get("value"))
-    timestamp = data.get("lid_sensor", {}).get("time_updated")  # Use lid timestamp for tracking
+    rfid = data.get("rfid")
+    scale_weight = normalize_decimal(data.get("scale"))
+    waste_level = normalize_decimal(data.get("waste_level_sensor"))
 
     # Check the in-memory state
     prev_state = bins_state.get(bin_id, {})
@@ -160,8 +159,9 @@ def handle_sensor_update(client, data):
     # Detect changes by comparing new values with the in-memory state
     sensors = {
         "rfid": rfid,
-        "lid_sensor": data.get("lid_sensor", {}).get("value"),
-        "compactor_sensor": data.get("compactor_sensor", {}).get("value"),
+        # set open or closed if true or false
+        "lid_sensor": data.get("lid_sensor"),
+        "compactor_sensor": data.get("compactor_sensor"),
         "waste_level_sensor": waste_level,
         "scale": scale_weight
     }
@@ -189,7 +189,7 @@ def handle_sensor_update(client, data):
             db.close()
 
         # Update in-memory state
-        bins_state[bin_id] = {**sensors, "timestamp": timestamp}
+        bins_state[bin_id] = {**sensors, "timestamp": datetime.now()}
 
         print(f"Database updated for bin {bin_id}. Changes: {changes}")
 

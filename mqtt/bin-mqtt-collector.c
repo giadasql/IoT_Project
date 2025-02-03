@@ -265,8 +265,8 @@ static void send_aggregated_mqtt_message(void) {
              "\"waste_level_sensor\":\"%s\"}",
              bin_id,
              collector_data.rfid.value,
-             collector_data.lid_sensor.value,
-             collector_data.compactor_sensor.value,
+             collector_data.lid_sensor.value ? "open" : "closed",
+             collector_data.compactor_sensor.value ? "on" : "off",
              collector_data.scale.value,
              collector_data.waste_level_sensor.value);
 
