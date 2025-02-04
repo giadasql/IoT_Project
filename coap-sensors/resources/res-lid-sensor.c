@@ -45,6 +45,8 @@ static generic_sensor_t lid_sensor_data = {
 // Handlers for CoAP requests
 static void lid_sensor_get_handler(coap_message_t *request, coap_message_t *response,
                                    uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
+      printf("Lid sensor get handler\n");
+      printf("Lid state: %d\n", lid_state);
     generic_get_handler(request, response, buffer, preferred_size, offset, &lid_sensor_data);
 }
 
