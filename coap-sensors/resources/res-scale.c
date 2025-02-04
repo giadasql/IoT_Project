@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 // Scale sensor state
-static float scale_value = 32.0f; // Initial weight value
+static float scale_value = 32.0; // Initial weight value
 
 // Conversion functions for the scale sensor
 static void scale_value_to_string(char *buffer, size_t size, void *state) {
@@ -23,6 +23,10 @@ static void scale_value_update_state(const char *payload, void *state) {
 
   float new_value = atof(payload); // Convert payload string to float
   *(float *)state += new_value;
+
+  // multiply by 100 to get the weight in grams and cast to int to print
+    int weight = (int)(*(float *)state * 100);
+    printf("Weight: %d grams\n", weight);
 
   printf("New scale sensor value: %.2f\n", *(float *)state);
 
