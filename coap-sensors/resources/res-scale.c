@@ -4,22 +4,26 @@
 #include "conversion_utils.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 // Scale sensor state
-static int scale_value = 32; // Initial weight value
+static float scale_value = 32.0f; // Initial weight value
 
 // Conversion functions for the scale sensor
 static void scale_value_to_string(char *buffer, size_t size, void *state) {
-  snprintf(buffer, size, "%.2d", *(int *)state); // Format as a decimal number with 2 decimal places
+  snprintf(buffer, size, "%.2f", *(float *)state); // Format as a float with 2 decimal places
 }
 
 static void scale_value_update_state(const char *payload, void *state) {
-  *(int *)state += atoi(payload); // Convert payload string to float and add to the current value
+  float new_value = atof(payload); // Convert payload string to float
+  *(float *)state += new_value;
+
   // Clamp to minimum 0
-    if (*(int *)state < 0) {
-        *(int *)state = 0;
-    }
-  printf("Scale sensor value updated to: %.2d\n", *(int *)state);
+  if (*(float *)state < 0.0f) {
+      *(float *)state = 0.0f;
+  }
+
+  printf("Scale sensor value updated to: %.2f\n", *(float *)state);
 }
 
 // Define the generic sensor structure
