@@ -60,7 +60,6 @@ static struct etimer periodic_timer;
 
 typedef struct {
     char value[64];
-    char time_updated[32];
 } sensor_data_t;
 
 // Structure to hold data for both sensors
@@ -229,7 +228,6 @@ static void parse_payload(const uint8_t *payload, const char *sensor_name, senso
                 snprintf(sensor_data->value, sizeof(sensor_data->value), "%.*s",
                          tokens[i + 1].end - tokens[i + 1].start,
                          (char *)payload + tokens[i + 1].start);
-                get_current_time(sensor_data->time_updated, sizeof(sensor_data->time_updated));
                 printf("%s updated to: %s\n", sensor_name, sensor_data->value);
                 break;
             }
