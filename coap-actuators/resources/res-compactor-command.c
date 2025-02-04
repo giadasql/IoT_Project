@@ -13,6 +13,9 @@ static void compactor_actuator_command_put_handler(coap_message_t *request, coap
     printf("CoAP handler invoked with payload: %.*s\n", preferred_size, buffer);
 
     size_t len = coap_get_payload(request, (const uint8_t **)&buffer);
+
+    char* payload = (char *)buffer;
+
     if (len > 0) {
         if (strncmp((char *)payload, "turn on", len) == 0) {
             value = true;
