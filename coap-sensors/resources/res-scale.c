@@ -11,11 +11,13 @@ static float scale_value = 32.0; // Initial weight value
 
 // Conversion functions for the scale sensor
 static void scale_value_to_string(char *buffer, size_t size, void *state) {
-   printf("Scale value before snprintf: %f\n", scale_value);
-
    float value = *(float *)state;
-   snprintf(buffer, size, "%f", value);
 
+   // separe the integer and decimal part of the value in two integers
+    int integer_part = (int)value;
+    int decimal_part = (int)((value - integer_part) * 100);
+
+   snprintf(buffer, size, "%d.%02d", integer_part, decimal_part);
 }
 
 static void scale_value_update_state(const char *payload, void *state) {
@@ -28,7 +30,6 @@ static void scale_value_update_state(const char *payload, void *state) {
     int weight = (int)(*(float *)state * 100);
     printf("Weight: %d grams\n", weight);
 
-  printf("New scale sensor value: %.2f\n", *(float *)state);
 
   // Clamp to minimum 0
   if (*(float *)state < 0.0f) {
