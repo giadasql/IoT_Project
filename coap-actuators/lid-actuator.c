@@ -10,7 +10,7 @@
 #include "net/ipv6/uip-ds6.h"
 
 // CoAP server endpoint for the lid sensor
-extern char lid_sensor_endpoint_uri[64] = ""; // Buffer to store endpoint URI
+extern char lid_sensor_endpoint_uri[64]; // Buffer to store endpoint URI
 extern coap_endpoint_t lid_sensor_address;
 
 static coap_message_t request[1]; // CoAP request message
@@ -75,8 +75,6 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
 
     while (1) {
         PROCESS_WAIT_EVENT();
-
-        printf("Device Process Event. Lid Actuator. Address: %s\n", local_ipv6_address);
 
         if (ev == button_hal_press_event) {
             button_event_handler((button_hal_button_t *)data);
