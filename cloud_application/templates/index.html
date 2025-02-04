@@ -294,21 +294,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="bin-row-{{ bin.bin_id }}">
-                            <td>
-                                    <span class="{{ 'text-success fw-bold' if bin.lid_state == 'open' else 'text-danger fw-bold' }}">
-                                        {{ 'OPEN' if bin.lid_state == 'open' else 'CLOSED' }}
-                                    </span>
-                            </td>
-                            <td>
-                                    <span class="{{ 'text-success fw-bold' if bin.compactor_state == 'true' else 'text-danger fw-bold' }}">
-                                        {{ 'ACTIVE' if bin.compactor_state == 'on' else 'NOT ACTIVE' }}
-                                    </span>
-                            </td>
-                            <td class="fw-bold">{{ bin.waste_level }}</td>
-                            <td class="fw-bold">{{ bin.scale_weight }}</td>
-                            <td class="fw-bold">{{ bin.last_updated }}</td>
-                        </tr>
+                            <!-- Rows will be populated by JavaScript -->
                         </tbody>
                     </table>
                 </div>
@@ -430,7 +416,7 @@
                     </td>
                     <td>
                         <span class="${bin.compactor_state === 'true' ? 'text-success fw-bold' : 'text-danger fw-bold'}">
-                            ${bin.compactor_state === 'true' ? 'ACTIVE' : 'NOT ACTIVE'}
+                            ${bin.compactor_state === 'on' ? 'ACTIVE' : 'NOT ACTIVE'}
                         </span>
                     </td>
                     <td class="fw-bold">${bin.waste_level}</td>
