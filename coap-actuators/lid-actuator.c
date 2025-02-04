@@ -57,6 +57,8 @@ static void button_event_handler(button_hal_button_t *btn) {
     toggle_lid_sensor_state();
 }
 
+extern process_event_t lid_command_event;
+
 // Main process for the actuator
 PROCESS(lid_actuator_process, "Lid Actuator");
 AUTOSTART_PROCESSES(&lid_actuator_process);
@@ -72,6 +74,8 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
 
     // Initialize button handling
     button_hal_init();
+
+    lid_command_event = process_alloc_event();
 
     while (1) {
         PROCESS_WAIT_EVENT();

@@ -7,6 +7,9 @@
 bool send_command_flag = false; // Flag to send the CoAP command
 bool value = false; // value to send
 
+process_event_t lid_command_event;
+
+
 // CoAP PUT handler to configure the lid sensor endpoint
 static void lid_actuator_command_put_handler(coap_message_t *request, coap_message_t *response,
                                             uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
@@ -26,7 +29,7 @@ static void lid_actuator_command_put_handler(coap_message_t *request, coap_messa
         } else {
             printf("Invalid command received: %.*s\n", (int)len, payload);
         }
-
+        process_post(PROCESS_BROADCAST, lid_command_event, NULL);
     } else {
         printf("Empty payload received.\n");
     }

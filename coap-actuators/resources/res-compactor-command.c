@@ -6,7 +6,7 @@
 
 bool send_compactor_command = false;
 bool compactor_value_to_send = false;
-process_event_t compactor_command_event; // Declare the event
+process_event_t compactor_command_event;
 
 // CoAP PUT handler to configure the lid sensor endpoint
 static void compactor_actuator_command_put_handler(coap_message_t *request, coap_message_t *response,
