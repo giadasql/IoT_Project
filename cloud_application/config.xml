@@ -1,7 +1,7 @@
 <bins>
     <bin id="bin01">
-        <collector_address>fe80::f6ce:367b:9c44:e26a</collector_address>
-        <lid_server_address>fe80::f6ce:36aa:8370:9738</lid_server_address>
+        <collector_address>fe80::f6ce:36aa:8370:9738</collector_address>
+        <lid_server_address>fe80::f6ce:367b:9c44:e26a</lid_server_address>
         <lid_actuator_address>fe80::f6ce:36fc:e563:b772</lid_actuator_address>
         <compactor_server_address>fe80::f6ce:36dc:2477:3d6d</compactor_server_address>
         <scale_server_address>fe80::f6ce:36d4:b744:3ef3</scale_server_address>
