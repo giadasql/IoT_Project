@@ -11,7 +11,6 @@ include $(CONTIKI)/Makefile.identify-target
 
 MODULES_REL += arch/platform/$(TARGET)
 MODULES_REL += ../jsmn ../utils
-PROJECT_SOURCEFILES += time_utils.c
 
 
 include $(CONTIKI)/Makefile.include
