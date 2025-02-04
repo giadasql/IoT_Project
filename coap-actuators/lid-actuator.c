@@ -10,14 +10,15 @@
 #include "net/ipv6/uip-ds6.h"
 
 // CoAP server endpoint for the lid sensor
-char lid_sensor_endpoint_uri[64] = ""; // Buffer to store endpoint URI
-coap_endpoint_t lid_sensor_address;
+extern char lid_sensor_endpoint_uri[64] = ""; // Buffer to store endpoint URI
+extern coap_endpoint_t lid_sensor_address;
 
 static coap_message_t request[1]; // CoAP request message
 static bool lid_sensor_state = false;  // Current state of the lid sensor (0: closed, 1: open)
 static bool send_command_pending = false; // Flag to send the CoAP command
 
 extern coap_resource_t lid_actuator_command;
+extern coap_resource_t lid_sensor_endpoint;
 extern bool send_command_flag;
 extern bool value;
 
