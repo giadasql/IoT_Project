@@ -38,6 +38,8 @@ void client_chunk_handler(coap_message_t *response) {
     printf("|%.*s\n", len, (char *)chunk);
 }
 
+process_event_t compactor_command_event;
+
 // Process to handle button events and CoAP PUT requests
 PROCESS(compactor_actuator_process, "Compactor Actuator");
 AUTOSTART_PROCESSES(&compactor_actuator_process);
@@ -55,14 +57,14 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
     // Initialize button-hal
     button_hal_init();
 
+    compactor_command_event = process_alloc_event();
+
     while (1) {
         PROCESS_WAIT_EVENT();
 
         if (ev == button_hal_press_event) {
             button_event_handler((button_hal_button_t *)data);
         }
-
-        printf("Running");
 
         // Handle pending CoAP PUT request
         if (coap_put_pending || send_compactor_command) {
@@ -87,7 +89,6 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
 
                 // Send the CoAP request
                 COAP_BLOCKING_REQUEST(&compactor_sensor_address, request, client_chunk_handler);
-                printf("CoAP PUT request sent to turn compactor %s.\n", value_to_send ? "ON" : "OFF");
             }
 
             coap_put_pending = 0; // Clear the pending flag
