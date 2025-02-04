@@ -239,8 +239,7 @@ static void parse_payload(const uint8_t *payload, const char *sensor_name, senso
 
 static void client_callback(coap_message_t *response, sensor_data_t *sensor, const char *sensor_name) {
     if (response) {
-        snprintf(sensor->value, sizeof(sensor->value), "%s", (char *)response->payload);
-        printf("%s updated to: %s\n", sensor_name, sensor->value);
+        parse_payload(response->payload, sensor_name, sensor);
     } else {
         printf("CoAP request for %s timed out.\n", sensor_name);
     }
