@@ -126,7 +126,7 @@ def check_waste_level():
     for bin in bins:
         if bin['waste_level'] > WASTE_LEVEL_THRESHOLD:
             global compactor_activated
-            if bin['compactor_state'] != 'active':  # Check if compactor is not already active
+            if bin['compactor_state'] != 'on':  # Check if compactor is not already active
                 if compactor_activated: # if compactor was already activated before but waste level is still above threshold
                     # check if there is an alarm for this bin already
                     alarms = fetch_alarm_data()
@@ -140,7 +140,7 @@ def check_waste_level():
                 else:
                     logging.warning(f"Waste level exceeded in bin {bin['bin_id']}: {bin['waste_level']}%")
                     # Send CoAP PUT request to activate compactor
-                    send_coap_put_request(bin['bin_id'], "/compactor/active", "true")
+                    send_coap_put_request(bin['bin_id'], "/compactor/command", "turn on")
                     compactor_activated = True
             else:
                 logging.info(f"Compactor is already active for bin {bin['bin_id']}. Skipping CoAP request.")
