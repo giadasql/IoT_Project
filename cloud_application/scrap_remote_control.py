@@ -120,32 +120,40 @@ def insert_alarm(bin_id, message):
     except mysql.connector.Error as err:
         logging.error(f"Database error: {err}")
 
-# Function to check waste level and log if above threshold
+
+
+compactor_states = {}
+
 def check_waste_level():
     bins = fetch_bin_data()
+    global compactor_states
+    
     for bin in bins:
+        if bin['bin_id'] not in compactor_states:
+            compactor_states[bin['bin_id']] = bin['compactor_state']
+        
         if bin['waste_level'] > WASTE_LEVEL_THRESHOLD:
-            global compactor_activated
+            if bin['compactor_state'] == "off" and compactor_states[bin['bin_id']] == "on": # compactor just turned off
+                # check if there is an alarm for this bin already
+                alarms = fetch_alarm_data()
+                alarm_exists = False
+                for alarm in alarms:
+                    if alarm['bin_id'] == bin['bin_id'] and not alarm['acknowledged']:
+                        alarm_exists = True
+                        break
+                if not alarm_exists:
+                    insert_alarm(bin['bin_id'], f"Waste level exceeded in bin {bin['bin_id']}: {bin['waste_level']}%")
+                    logging.warning(f"Compactor turned off while waste level exceeded in bin {bin['bin_id']}. Alarm inserted into database.")
+                    
             if bin['compactor_state'] != 'on':  # Check if compactor is not already active
-                if compactor_activated: # if compactor was already activated before but waste level is still above threshold
-                    # check if there is an alarm for this bin already
-                    alarms = fetch_alarm_data()
-                    alarm_exists = False
-                    for alarm in alarms:
-                        if alarm['bin_id'] == bin['bin_id'] and not alarm['acknowledged']:
-                            alarm_exists = True
-                            break
-                    if not alarm_exists:
-                        insert_alarm(bin['bin_id'], f"Waste level exceeded in bin {bin['bin_id']}: {bin['waste_level']}%")
-                else:
-                    logging.warning(f"Waste level exceeded in bin {bin['bin_id']}: {bin['waste_level']}%")
-                    # Send CoAP PUT request to activate compactor
-                    send_coap_put_request(bin['bin_id'], "/compactor/command", "turn on")
-                    compactor_activated = True
+                logging.warning(f"Waste level exceeded in bin {bin['bin_id']}: {bin['waste_level']}%")
+                # Send CoAP PUT request to activate compactor
+                send_coap_put_request(bin['bin_id'], "/compactor/command", "turn on")
             else:
                 logging.info(f"Compactor is already active for bin {bin['bin_id']}. Skipping CoAP request.")
-        else:
-            compactor_activated = False
+        
+        compactor_states[bin['bin_id']] = bin['compactor_state']
+
 
 # send configuration over coap to compactor actuator and lid actuator (FOR SIMULATION PURPOSES ONLY)
 def send_configuration_over_coap():
