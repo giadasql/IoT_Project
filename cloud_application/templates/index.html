@@ -16,31 +16,39 @@
             background-color: #f8f9fa;
             padding: 20px;
         }
-        .title{
+
+        .title {
             text-align: center;
         }
+
         .table {
             background-color: white;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         .table thead {
             background-color: #0d6efd;
             color: white;
         }
+
         .table tbody tr:hover {
             background-color: #f1f1f1;
         }
+
         .status-active {
             color: green;
             font-weight: bold;
         }
+
         .status-inactive {
             color: red;
             font-weight: bold;
         }
+
         .btn-group {
             margin-bottom: 20px;
         }
+
         .bin-section {
             margin-bottom: 40px;
             border-bottom: 2px solid #ddd;
@@ -55,47 +63,57 @@
             font-weight: bold;
             transition: all 0.3s ease;
         }
+
         .btn-success {
             background: linear-gradient(135deg, #28a745, #34d058);
             color: white;
             border: none;
         }
+
         .btn-success:hover {
             background: linear-gradient(135deg, #34d058, #28a745);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+
         .btn-danger {
             background: linear-gradient(135deg, #dc3545, #ff6b6b);
             color: white;
             border: none;
         }
+
         .btn-danger:hover {
             background: linear-gradient(135deg, #ff6b6b, #dc3545);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+
         .btn-warning {
             background: linear-gradient(135deg, #ffc107, #ffdd57);
             color: black;
             border: none;
         }
+
         .btn-warning:hover {
             background: linear-gradient(135deg, #ffdd57, #ffc107);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+
         .btn-primary {
             background: linear-gradient(135deg, #007bff, #3399ff);
             color: white;
             border: none;
         }
+
         .btn-primary:hover {
             background: linear-gradient(135deg, #3399ff, #007bff);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+
         .btn-secondary {
             background: linear-gradient(135deg, #6c757d, #adb5bd);
             color: white;
             border: none;
         }
+
         .btn-secondary:hover {
             background: linear-gradient(135deg, #adb5bd, #6c757d);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -173,7 +191,8 @@
             color: #0d6efd; /* Bootstrap primary color */
             font-weight: bold;
         }
-        .section-title{
+
+        .section-title {
             text-align: center;
             font-size: 1.5rem;
             font-weight: bold;
@@ -210,7 +229,6 @@
     </style>
 
 
-
 </head>
 <body>
 <div class="container">
@@ -223,17 +241,20 @@
     <!-- Tabs -->
     <ul class="nav nav-tabs mt-4" id="binTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="bins-tab" data-bs-toggle="tab" data-bs-target="#bins" type="button" role="tab" aria-controls="bins" aria-selected="true">
+            <button class="nav-link active" id="bins-tab" data-bs-toggle="tab" data-bs-target="#bins" type="button"
+                    role="tab" aria-controls="bins" aria-selected="true">
                 Monitoring
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab" aria-controls="transactions" aria-selected="false">
+            <button class="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions"
+                    type="button" role="tab" aria-controls="transactions" aria-selected="false">
                 Log
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="alarms-tab" data-bs-toggle="tab" data-bs-target="#alarms" type="button" role="tab" aria-controls="alarms" aria-selected="false">
+            <button class="nav-link" id="alarms-tab" data-bs-toggle="tab" data-bs-target="#alarms" type="button"
+                    role="tab" aria-controls="alarms" aria-selected="false">
                 Alarms
             </button>
         </li>
@@ -250,16 +271,20 @@
                     <h3 class="mt-4 section-title">Simulation</h3>
                     <!-- Simulation Buttons -->
                     <div class="btn-group d-flex justify-content-between flex-wrap gap-3">
-                        <button class="btn btn-danger d-flex align-items-center justify-content-center flex-grow-1" onclick="increment_weight_random('{{ bin.bin_id }}')">
+                        <button class="btn btn-danger d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="increment_weight_random('{{ bin.bin_id }}')">
                             <i class="fas fa-weight me-2"></i> Increment Weight
                         </button>
-                        <button class="btn btn-danger d-flex align-items-center justify-content-center flex-grow-1" onclick="increment_waste_random('{{ bin.bin_id }}')">
+                        <button class="btn btn-danger d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="increment_waste_random('{{ bin.bin_id }}')">
                             <i class="fas fa-percent me-2"></i> Increment Waste
                         </button>
-                        <button class="btn btn-primary d-flex align-items-center justify-content-center flex-grow-1" onclick="reduce_waste_random('{{ bin.bin_id }}')">
+                        <button class="btn btn-primary d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="reduce_waste_random('{{ bin.bin_id }}')">
                             <i class="fas fa-recycle me-2"></i> Reduce Waste
                         </button>
-                        <button class="btn btn-success d-flex align-items-center justify-content-center flex-grow-1" onclick="empty_bin('{{ bin.bin_id }}')">
+                        <button class="btn btn-success d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="empty_bin('{{ bin.bin_id }}')">
                             <i class="fas fa-trash me-2"></i> Empty Bin
                         </button>
                     </div>
@@ -267,16 +292,20 @@
                     <h3 class="mt-5 section-title">Control Panel</h3>
                     <!-- Control Panel -->
                     <div class="btn-group d-flex justify-content-between flex-wrap gap-3">
-                        <button class="btn btn-warning d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/compactor/command', 'turn on')">
+                        <button class="btn btn-warning d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="sendCoapRequest('{{ bin.bin_id }}', '/compactor/command', 'turn on')">
                             <i class="fas fa-check me-2"></i> Activate Compactor
                         </button>
-                        <button class="btn btn-danger d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/compactor/command', 'turn off')">
+                        <button class="btn btn-danger d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="sendCoapRequest('{{ bin.bin_id }}', '/compactor/command', 'turn off')">
                             <i class="fas fa-times me-2"></i> Deactivate Compactor
                         </button>
-                        <button class="btn btn-primary d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/command', 'open')">
+                        <button class="btn btn-primary d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/command', 'open')">
                             <i class="fas fa-door-open me-2"></i> Open Lid
                         </button>
-                        <button class="btn btn-secondary d-flex align-items-center justify-content-center flex-grow-1" onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/command', 'close')">
+                        <button class="btn btn-secondary d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/command', 'close')">
                             <i class="fas fa-door-closed me-2"></i> Close Lid
                         </button>
                     </div>
@@ -294,7 +323,9 @@
                         </tr>
                         </thead>
                         <tbody>
-                            <!-- Rows will be populated by JavaScript -->
+                            <tr id="bin-row-{{ bin.bin_id }}">
+                                <!-- Rows will be populated by JavaScript -->
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -364,7 +395,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ bin_id, path, payload }),
+                body: JSON.stringify({bin_id, path, payload}),
             });
             const result = await response.json();
             console.log(result.message);
@@ -390,7 +421,7 @@
         const waste = Math.random() * 20 + 20;
         sendCoapRequest(bin_id, '/waste/level', (-waste).toFixed(2));
     }
-    
+
     // Function to empty the bin
     function empty_bin(bin_id) {
         sendCoapRequest(bin_id, '/waste/level', '-100');
@@ -497,7 +528,7 @@
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ alarm_id }),
+            body: JSON.stringify({alarm_id}),
         })
             .then(response => response.json())
             .then(data => {
