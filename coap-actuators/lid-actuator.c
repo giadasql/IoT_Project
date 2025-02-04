@@ -66,7 +66,7 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
     printf("Lid Actuator Process started.\n");
 
     // Register the sensor configuration resources
-    coap_activate_resource(&lid_sensor_config, lid_sensor.resource_path);
+    coap_activate_resource(&lid_sensor_endpoint, "lid/config");
     coap_activate_resource(&lid_actuator_command, "lid/command");
 
     // Initialize button handling
