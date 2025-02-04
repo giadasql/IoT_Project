@@ -11,7 +11,7 @@ static float scale_value = 32.0f; // Initial weight value
 
 // Conversion functions for the scale sensor
 static void scale_value_to_string(char *buffer, size_t size, void *state) {
-   printf("Scale value before snprintf: %.2f\n", *(float *)state);
+   printf("Scale value before snprintf: %.2f\n", scale_value);
 
    float value = *(float *)state;
    snprintf(buffer, size, "%.2f", value);
