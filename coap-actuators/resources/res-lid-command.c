@@ -26,6 +26,7 @@ static void lid_actuator_command_put_handler(coap_message_t *request, coap_messa
         } else {
             printf("Invalid command received: %.*s\n", (int)len, payload);
         }
+
     } else {
         printf("Empty payload received.\n");
     }

@@ -62,6 +62,8 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
             button_event_handler((button_hal_button_t *)data);
         }
 
+        printf("Running");
+
         // Handle pending CoAP PUT request
         if (coap_put_pending || send_compactor_command) {
             bool value_to_send = compactor_value_to_send;
