@@ -1,14 +1,12 @@
 #include "contiki.h"
 #include "coap-engine.h"
 #include "coap-blocking-api.h"
-#include "process.h"
 #include <stdio.h>
 #include <string.h>
 
 bool send_compactor_command = false;
 bool compactor_value_to_send = false;
-extern process_event_t compactor_command_event; // Declare the event
-extern struct process compactor_actuator_process; // Reference the main process
+process_event_t compactor_command_event; // Declare the event
 
 // CoAP PUT handler to configure the lid sensor endpoint
 static void compactor_actuator_command_put_handler(coap_message_t *request, coap_message_t *response,
@@ -32,7 +30,7 @@ static void compactor_actuator_command_put_handler(coap_message_t *request, coap
             printf("Invalid command received: %.*s\n", (int)len, payload);
         }
         // Post event to wake up the main process
-        process_post(&compactor_actuator_process, compactor_command_event, NULL);
+        process_post(PROCESS_BROADCAST, compactor_command_event, NULL);
     } else {
         printf("Empty payload received.\n");
     }

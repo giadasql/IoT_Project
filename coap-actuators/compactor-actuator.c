@@ -38,7 +38,7 @@ void client_chunk_handler(coap_message_t *response) {
     printf("|%.*s\n", len, (char *)chunk);
 }
 
-process_event_t compactor_command_event;
+extern process_event_t compactor_command_event;
 
 // Process to handle button events and CoAP PUT requests
 PROCESS(compactor_actuator_process, "Compactor Actuator");
