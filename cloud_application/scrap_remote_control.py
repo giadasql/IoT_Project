@@ -157,7 +157,7 @@ def send_configuration_over_coap():
         send_coap_put_request(bin_id, "/lid/config", f"{bin_data['lid_server_address']}")
         
 # Send configuration to actuators on startup
-#send_configuration_over_coap()
+send_configuration_over_coap()
 
 # Scheduled task for polling
 scheduler = BackgroundScheduler()
