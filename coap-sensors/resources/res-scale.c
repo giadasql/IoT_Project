@@ -5,17 +5,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <locale.h>
 
 // Scale sensor state
 static float scale_value = 32.0f; // Initial weight value
 
 // Conversion functions for the scale sensor
 static void scale_value_to_string(char *buffer, size_t size, void *state) {
+  setlocale(LC_NUMERIC, "C");  // Force "." as decimal separator
+
   snprintf(buffer, size, "%.2f", *(float *)state); // Format as a float with 2 decimal places
 }
 
 static void scale_value_update_state(const char *payload, void *state) {
   printf("Updating scale sensor value with payload: %s\n", payload);
+  setlocale(LC_NUMERIC, "C");  // Force "." as decimal separator
+
   float new_value = atof(payload); // Convert payload string to float
   *(float *)state += new_value;
 
