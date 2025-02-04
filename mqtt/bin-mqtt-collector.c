@@ -246,6 +246,27 @@ static void client_callback(coap_message_t *response, sensor_data_t *sensor, con
     }
 }
 
+static void lid_sensor_callback(coap_message_t *response) {
+    client_callback(response, &collector_data.lid_sensor, "Lid Sensor");
+}
+
+static void compactor_sensor_callback(coap_message_t *response) {
+    client_callback(response, &collector_data.compactor_sensor, "Compactor Sensor");
+}
+
+static void scale_sensor_callback(coap_message_t *response) {
+    client_callback(response, &collector_data.scale, "Scale Sensor");
+}
+
+static void waste_level_sensor_callback(coap_message_t *response) {
+    client_callback(response, &collector_data.waste_level_sensor, "Waste Level Sensor");
+}
+
+static void rfid_callback(coap_message_t *response) {
+    client_callback(response, &collector_data.rfid, "RFID");
+}
+
+
 static bool have_connectivity(void) {
   return uip_ds6_get_global(ADDR_PREFERRED) != NULL && uip_ds6_defrt_choose() != NULL;
 }
@@ -348,23 +369,23 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, "/compactor/active");
-        COAP_BLOCKING_REQUEST(&compactor_server_endpoint, request, client_callback, &collector_data.compactor_sensor);
+        COAP_BLOCKING_REQUEST(&compactor_server_endpoint, request, compactor_sensor_callback);
 
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, "/lid/open");
-        COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback, &collector_data.lid_sensor);
+        COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, lid_sensor_callback);
 
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, "/rfid/value");
-        COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, client_callback, &collector_data.rfid);
+        COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, rfid_callback);
 
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, "/scale/value");
-        COAP_BLOCKING_REQUEST(&scale_server_endpoint, request, client_callback, &collector_data.scale);
+        COAP_BLOCKING_REQUEST(&scale_server_endpoint, request, scale_sensor_callback);
 
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, "/waste/level");
-        COAP_BLOCKING_REQUEST(&waste_level_server_endpoint, request, client_callback, &collector_data.waste_level_sensor);
+        COAP_BLOCKING_REQUEST(&waste_level_server_endpoint, request, waste_level_sensor_callback);
 
         send_aggregated_mqtt_message();
       }
