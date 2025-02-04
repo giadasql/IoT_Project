@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
-bool send_command_flag = false; // Flag to send the CoAP command
-bool value = false; // value to send
+bool send_compactor_command = false;
+bool compactor_value_to_send = false;
 
 // CoAP PUT handler to configure the lid sensor endpoint
 static void compactor_actuator_command_put_handler(coap_message_t *request, coap_message_t *response,
@@ -18,13 +18,13 @@ static void compactor_actuator_command_put_handler(coap_message_t *request, coap
 
     if (len > 0) {
         if (strncmp((char *)payload, "turn on", len) == 0) {
-            value = true;
-            send_command_flag = true;
-            printf("Command received: turn on. Value set to true.\n");
+            compactor_value_to_send = true;
+            send_compactor_command = true;
+            printf("Command received: turn on. compactor_value_to_send set to true.\n");
         } else if (strncmp((char *)payload, "turn off", len) == 0) {
-            value = false;
-            send_command_flag = true;
-            printf("Command received: turn off. Value set to false.\n");
+            compactor_value_to_send = false;
+            send_compactor_command = true;
+            printf("Command received: turn off. compactor_value_to_send set to false.\n");
         } else {
             printf("Invalid command received: %.*s\n", (int)len, payload);
         }

@@ -13,8 +13,8 @@ extern coap_endpoint_t compactor_sensor_address;
 extern char compactor_sensor_endpoint_uri[64];
 
 extern coap_resource_t compactor_actuator_command;
-extern bool send_command_flag;
-extern bool value;
+extern bool send_compactor_command;
+extern bool compactor_value_to_send;
 
 // Shared variables for CoAP PUT operation
 static int coap_put_pending = 0;
@@ -63,8 +63,8 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
         }
 
         // Handle pending CoAP PUT request
-        if (coap_put_pending || send_command_flag) {
-            bool value_to_send = value;
+        if (coap_put_pending || send_compactor_command) {
+            bool value_to_send = compactor_value_to_send;
             if (coap_put_pending) value_to_send = true;
 
             printf("Sending CoAP PUT request to turn compactor %s.\n", value_to_send ? "ON" : "OFF");
@@ -89,7 +89,7 @@ PROCESS_THREAD(compactor_actuator_process, ev, data)
             }
 
             coap_put_pending = 0; // Clear the pending flag
-            send_command_flag = 0; // Clear the command flag
+            send_compactor_command = 0; // Clear the command flag
         }
 
     }
