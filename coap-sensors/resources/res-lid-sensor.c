@@ -39,7 +39,7 @@ static generic_sensor_t lid_sensor_data = {
     .type = "Boolean",
     .state = &lid_state,
     .to_string = boolean_to_string,
-    .update_state = boolean_update_state
+    .update_state = lid_state_update_state
 };
 
 // Handlers for CoAP requests
