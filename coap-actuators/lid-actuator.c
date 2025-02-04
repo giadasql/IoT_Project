@@ -36,7 +36,7 @@ static void toggle_lid_sensor_state(void) {
     printf("Toggling lid sensor state to: %d\n", lid_sensor_state);
 
     // Set flag to send the CoAP command
-    send_command_flag = 1;
+    send_command_pending = 1;
 }
 
 void client_chunk_handler(coap_message_t *response) {
