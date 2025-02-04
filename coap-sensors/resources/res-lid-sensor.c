@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
+
 
 static bool lid_state = false; // false: closed, true: open
 extern char rfid_code[64]; // RFID value shared with the RFID resource

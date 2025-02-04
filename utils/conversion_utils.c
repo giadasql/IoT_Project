@@ -5,9 +5,7 @@
 
 // Boolean Conversion
 void boolean_to_string(char *buffer, size_t size, void *state) {
-    snprintf(buffer, size, "%s", (*(int *)state) == 1 ? "true" : "false");
-
-    printf("Boolean to string: %s\n", buffer);
+    snprintf(buffer, size, "%s", (*(int *)state) ? "true" : "false");
 }
 
 void boolean_update_state(const char *payload, void *state) {
