@@ -275,18 +275,19 @@ static void send_aggregated_mqtt_message(void) {
     setlocale(LC_NUMERIC, "C");
 
     snprintf(pub_msg, sizeof(pub_msg),
-             "{\"bin_id\":\"%s\","
-             "\"rfid\":\"%s\","
-             "\"lid_sensor\":\"%s\","
-             "\"compactor_sensor\":\"%s\","
-             "\"scale\":\"%s\","
-             "\"waste_level_sensor\":\"%s\"}",
-             bin_id,
-             collector_data.rfid.value,
-             collector_data.lid_sensor.value ? "open" : "closed",
-             collector_data.compactor_sensor.value ? "on" : "off",
-             collector_data.scale.value,
-             collector_data.waste_level_sensor.value);
+         "{\"bin_id\":\"%s\","
+         "\"rfid\":\"%s\","
+         "\"lid_sensor\":\"%s\","
+         "\"compactor_sensor\":\"%s\","
+         "\"scale\":\"%s\","
+         "\"waste_level_sensor\":\"%s\"}",
+         bin_id,
+         collector_data.rfid.value,
+         strcmp(collector_data.lid_sensor.value, "true") == 0 ? "open" : "closed",
+         strcmp(collector_data.compactor_sensor.value, "true") == 0 ? "on" : "off",
+         collector_data.scale.value,
+         collector_data.waste_level_sensor.value);
+
 
     mqtt_publish(&conn, NULL, "bins", (uint8_t *)pub_msg, strlen(pub_msg), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
     printf("Published aggregated data to MQTT: %s\n", pub_msg);
