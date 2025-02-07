@@ -9,21 +9,23 @@
 #include "net/ipv6/uiplib.h"
 #include "net/ipv6/uip-ds6.h"
 
-// CoAP server endpoint for the lid sensor
+// CoAP resource for the lid sensor address configuration - only needed for simulation
 extern char lid_sensor_endpoint_uri[64]; // Buffer to store endpoint URI
 extern coap_endpoint_t lid_sensor_address;
 
 static coap_message_t request[1]; // CoAP request message
-static bool lid_sensor_state = false;  // Current state of the lid sensor (0: closed, 1: open)
-static bool send_command_pending = false; // Flag to send the CoAP command
 
+static bool lid_sensor_state = false;  // Current state of the lid sensor (false: closed, true: open)
+static bool send_command_pending = false; // Flag to execute the command when button is pressed
+
+// resource for the lid actuator command
 extern coap_resource_t lid_actuator_command;
 extern coap_resource_t lid_sensor_endpoint;
 extern bool send_lid_command;
-extern bool lid_value_to_send;
+extern bool lid_value_to_send; // flag to execute the command when requested via CoAP
 
-
-// Function to toggle the state of the lid sensor on the remote device
+// Function to toggle the lid state - only needed for simulation
+// The lid actuator will send a CoAP PUT request to the lid sensor to toggle its state
 static void toggle_lid_sensor_state(void) {
     // Validate that the lid sensor endpoint is configured
     if (strlen(lid_sensor_endpoint_uri) == 0) {
@@ -57,9 +59,9 @@ static void button_event_handler(button_hal_button_t *btn) {
     toggle_lid_sensor_state();
 }
 
+// Event that will be posted when a command is received
 extern process_event_t lid_command_event;
 
-// Main process for the actuator
 PROCESS(lid_actuator_process, "Lid Actuator");
 AUTOSTART_PROCESSES(&lid_actuator_process);
 
@@ -68,18 +70,20 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
 
     printf("Lid Actuator Process started.\n");
 
-    // Register the sensor configuration resources
+    // Register the resources
     coap_activate_resource(&lid_sensor_endpoint, "lid/config");
     coap_activate_resource(&lid_actuator_command, "lid/command");
 
     // Initialize button handling
     button_hal_init();
 
+    // Register the button event handler
     lid_command_event = process_alloc_event();
 
     while (1) {
         PROCESS_WAIT_EVENT();
 
+        // if event is a button press event, call the button event handler
         if (ev == button_hal_press_event) {
             button_event_handler((button_hal_button_t *)data);
         }
@@ -97,11 +101,11 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
             coap_set_payload(request, (uint8_t *)(lid_sensor_state ? "true" : "false"),
                              strlen(lid_sensor_state ? "true" : "false"));
 
-            // Send the CoAP request to the lid sensor address
+            // Send the CoAP request to the lid sensor address - only needed for simulation
             COAP_BLOCKING_REQUEST(&lid_sensor_address, request, client_chunk_handler);
             printf("Lid sensor state update sent: %d\n", lid_sensor_state);
 
-            // Reset the send command flag
+            // Reset the flag
             send_command_pending = 0;
         }
     }
