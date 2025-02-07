@@ -19,8 +19,8 @@ static bool send_command_pending = false; // Flag to send the CoAP command
 
 extern coap_resource_t lid_actuator_command;
 extern coap_resource_t lid_sensor_endpoint;
-extern bool send_command_flag;
-extern bool value;
+extern bool send_lid_command;
+extern bool lid_value_to_send;
 
 
 // Function to toggle the state of the lid sensor on the remote device
@@ -84,10 +84,10 @@ PROCESS_THREAD(lid_actuator_process, ev, data) {
             button_event_handler((button_hal_button_t *)data);
         }
 
-        if(send_command_flag) {
+        if(send_lid_command) {
             send_command_pending = 1;
-            lid_sensor_state = value;
-            send_command_flag = 0;
+            lid_sensor_state = lid_value_to_send;
+            send_lid_command = 0;
         }
 
         if (send_command_pending) {

@@ -8,21 +8,24 @@
 #include "net/ipv6/uiplib.h"
 #include "net/ipv6/uip-ds6.h"
 
+// resource for configuring the compactor sensor address - only needed for simulation
 extern coap_resource_t compactor_sensor_endpoint;
 extern coap_endpoint_t compactor_sensor_address;
 extern char compactor_sensor_endpoint_uri[64];
 
+// resource for compactor actuator commands
 extern coap_resource_t compactor_actuator_command;
 extern bool send_compactor_command;
 extern bool compactor_value_to_send;
 
-// Shared variables for CoAP PUT operation
+// bit flag to signal that we need to send a CoAP PUT request to the compactor sensor.
+// This is triggered by a button press event.
 static int coap_put_pending = 0;
 
 // Button press event handler
 static void button_event_handler(button_hal_button_t *btn) {
     coap_put_pending = 1; // Signal to the main thread that a request is pending
-    printf("CoAP PUT request prepared to turn compactor ON.\n");
+    printf("CoAP PUT request prepared to turn compactor ON.\n"); // button only turns compactor on
 }
 
 void client_chunk_handler(coap_message_t *response) {

@@ -4,16 +4,21 @@
 #include <stdio.h>
 #include <string.h>
 
-// CoAP server endpoint for the lid sensor
-char lid_sensor_endpoint_uri[64] = ""; // Buffer to store endpoint URI
+// --------------------- ONLY NEEDED FOR SIMULATION ---------------------
+// For simulation purposes, we need to store the address of the lid sensor because the
+// lid actuator needs to send CoAP requests to the lid sensor to toggle its state.
+
+// Store the address of the lid sensor
+char lid_sensor_endpoint_uri[64] = "";
 coap_endpoint_t lid_sensor_address;
 
-// CoAP PUT handler to configure the lid sensor endpoint
+// CoAP PUT handler to configure the lid sensor address
 static void lid_sensor_endpoint_put_handler(coap_message_t *request, coap_message_t *response,
                                             uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-    printf("CoAP handler invoked with payload: %.*s\n", preferred_size, buffer);
 
+    printf("CoAP handler invoked with payload: %.*s\n", preferred_size, buffer);
     size_t len = coap_get_payload(request, (const uint8_t **)&buffer);
+
     if (len > 0 && len < sizeof(lid_sensor_endpoint_uri)) {
         strncpy(lid_sensor_endpoint_uri, (char *)buffer, len);
         lid_sensor_endpoint_uri[len] = '\0';
@@ -31,7 +36,7 @@ static void lid_sensor_endpoint_put_handler(coap_message_t *request, coap_messag
     }
 }
 
-// CoAP GET handler to retrieve the lid sensor endpoint configuration
+// CoAP GET handler to retrieve the lid sensor address
 static void lid_sensor_endpoint_get_handler(coap_message_t *request, coap_message_t *response,
                                             uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     snprintf((char *)buffer, preferred_size, "{\"uri\":\"%s\"}", lid_sensor_endpoint_uri);
@@ -39,6 +44,6 @@ static void lid_sensor_endpoint_get_handler(coap_message_t *request, coap_messag
     coap_set_payload(response, buffer, strlen((char *)buffer));
 }
 
-// CoAP resource for configuring the lid sensor endpoint
+// CoAP resource for configuring the lid sensor address
 RESOURCE(lid_sensor_endpoint, "title=\"Configure Lid Sensor Endpoint\";rt=\"Text\"",
          lid_sensor_endpoint_get_handler, NULL, lid_sensor_endpoint_put_handler, NULL);
