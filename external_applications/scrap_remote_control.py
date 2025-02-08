@@ -172,6 +172,13 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(check_waste_level, 'interval', seconds=POLLING_INTERVAL)
 scheduler.start()
 
+# Flask route to display the page
+@app.route('/')
+def index():
+    bins = fetch_bin_data()
+    return render_template('index.html', bins=bins)
+
+
 # Flask route to fetch current bin data
 @app.route('/api/bins')
 def get_bins():
