@@ -110,10 +110,10 @@ static void configuration_received_handler(const char *topic, uint16_t topic_len
     // variables to store the received addresses
     char received_collector_address[64] = {0};
     char received_bin_id[64] = {0};
-    char lid_server_address[64] = {0};
-    char compactor_server_address[64] = {0};
-    char scale_server_address[64] = {0};
-    char waste_level_server_address[64] = {0};
+    char lid_sensor_address[64] = {0};
+    char compactor_sensor_address[64] = {0};
+    char scale_sensor_address[64] = {0};
+    char waste_level_sensor_address[64] = {0};
 
     // Mapping between JSON keys and variables
     struct {
@@ -123,10 +123,10 @@ static void configuration_received_handler(const char *topic, uint16_t topic_len
     } config_mappings[] = {
         {"collector_address", received_collector_address, sizeof(received_collector_address)},
         {"bin_id", received_bin_id, sizeof(received_bin_id)},
-        {"lid_server_address", lid_server_address, sizeof(lid_server_address)},
-        {"compactor_server_address", compactor_server_address, sizeof(compactor_server_address)},
-        {"scale_server_address", scale_server_address, sizeof(scale_server_address)},
-        {"waste_level_server_address", waste_level_server_address, sizeof(waste_level_server_address)}
+        {"lid_sensor_address", lid_sensor_address, sizeof(lid_sensor_address)},
+        {"compactor_sensor_address", compactor_sensor_address, sizeof(compactor_sensor_address)},
+        {"scale_sensor_address", scale_sensor_address, sizeof(scale_sensor_address)},
+        {"waste_level_sensor_address", waste_level_sensor_address, sizeof(waste_level_sensor_address)}
     };
 
     // Parse the JSON response using JSMN
@@ -155,23 +155,25 @@ static void configuration_received_handler(const char *topic, uint16_t topic_len
         }
     }
 
+    // if the message is for this collector, update the configuration
     if (strcmp(received_collector_address, local_ipv6_address) == 0) {
         printf("Received configuration for Bin ID: %s\n", received_bin_id);
-        printf("Lid Server Address: %s\n", lid_server_address);
-        printf("Compactor Server Address: %s\n", compactor_server_address);
-        printf("Scale Server Address: %s\n", scale_server_address);
-        printf("Waste Level Server Address: %s\n", waste_level_server_address);
+        printf("Lid Sensor Address: %s\n", lid_sensor_address);
+        printf("Compactor Sensor Address: %s\n", compactor_sensor_address);
+        printf("Scale Sensor Address: %s\n", scale_sensor_address);
+        printf("Waste Level Sensor Address: %s\n", waste_level_sensor_address);
 
         strncpy(bin_id, received_bin_id, sizeof(bin_id));
-        coap_endpoint_parse(lid_server_address, strlen(lid_server_address), &lid_sensor_endpoint);
-        coap_endpoint_parse(compactor_server_address, strlen(compactor_server_address), &compactor_sensor_endpoint);
-        coap_endpoint_parse(scale_server_address, strlen(scale_server_address), &scale_sensor_endpoint);
-        coap_endpoint_parse(waste_level_server_address, strlen(waste_level_server_address), &waste_level_sensor_endpoint);
 
-        strncpy(compactor_sensor_uri, compactor_server_address, sizeof(compactor_sensor_uri));
-        strncpy(lid_sensor_uri, lid_server_address, sizeof(lid_sensor_uri));
-        strncpy(scale_sensor_uri, scale_server_address, sizeof(scale_sensor_uri));
-        strncpy(waste_level_sensor_uri, waste_level_server_address, sizeof(waste_level_sensor_uri));
+        coap_endpoint_parse(lid_sensor_address, strlen(lid_sensor_address), &lid_sensor_endpoint);
+        coap_endpoint_parse(compactor_sensor_address, strlen(compactor_sensor_address), &compactor_sensor_endpoint);
+        coap_endpoint_parse(scale_sensor_address, strlen(scale_sensor_address), &scale_sensor_endpoint);
+        coap_endpoint_parse(waste_level_sensor_address, strlen(waste_level_sensor_address), &waste_level_sensor_endpoint);
+
+        strncpy(compactor_sensor_uri, compactor_sensor_address, sizeof(compactor_sensor_uri));
+        strncpy(lid_sensor_uri, lid_sensor_address, sizeof(lid_sensor_uri));
+        strncpy(scale_sensor_uri, scale_sensor_address, sizeof(scale_sensor_uri));
+        strncpy(waste_level_sensor_uri, waste_level_sensor_address, sizeof(waste_level_sensor_uri));
 
         state = STATE_CONFIG_RECEIVED;
     } else {
@@ -179,7 +181,7 @@ static void configuration_received_handler(const char *topic, uint16_t topic_len
     }
 }
 
-/* MQTT Event Handler */
+// Handler for MQTT events
 static void mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data)
 {
   switch(event) {
@@ -220,8 +222,8 @@ static void mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data
   }
 }
 
-/* Helper Function: Parse JSON Payload */
-static void parse_payload(const uint8_t *payload, const char *sensor_name, sensor_data_t *sensor_data) {
+// Helper function to parse the JSON payload for sensor data received from CoAP
+static void parse_sensor_read_payload(const uint8_t *payload, const char *sensor_name, sensor_data_t *sensor_data) {
     jsmn_parser parser;
     jsmntok_t tokens[16];
     jsmn_init(&parser);
@@ -242,9 +244,10 @@ static void parse_payload(const uint8_t *payload, const char *sensor_name, senso
     }
 }
 
+// Callback functions for CoAP client requests
 static void client_callback(coap_message_t *response, sensor_data_t *sensor, const char *sensor_name) {
     if (response) {
-        parse_payload(response->payload, sensor_name, sensor);
+        parse_sensor_read_payload(response->payload, sensor_name, sensor);
     } else {
         printf("CoAP request for %s timed out.\n", sensor_name);
     }
@@ -270,12 +273,12 @@ static void rfid_callback(coap_message_t *response) {
     client_callback(response, &collector_data.rfid, "RFID");
 }
 
-
+// Helper function to check if the collector has network connectivity
 static bool have_connectivity(void) {
   return uip_ds6_get_global(ADDR_PREFERRED) != NULL && uip_ds6_defrt_choose() != NULL;
 }
 
-/* Publish Aggregated MQTT Message */
+// Publish Aggregated MQTT Message with all sensor data
 static void send_aggregated_mqtt_message(void) {
     setlocale(LC_NUMERIC, "C");
 
@@ -298,7 +301,7 @@ static void send_aggregated_mqtt_message(void) {
     printf("Published aggregated data to MQTT: %s\n", pub_msg);
 }
 
-/* Helper Function: Get Local IPv6 Address */
+// Helper Function to get the local IPv6 address
 static void get_local_ipv6_address(char *buffer, size_t buffer_size) {
     uip_ds6_addr_t *addr = NULL;
 
@@ -315,16 +318,19 @@ static void get_local_ipv6_address(char *buffer, size_t buffer_size) {
     snprintf(buffer, buffer_size, "unknown");
 }
 
-/* Main Process */
+// Main process
 PROCESS_THREAD(mqtt_collector_process, ev, data)
 {
   PROCESS_BEGIN();
+
+  // Inizialize the MQTT connection
   snprintf(client_id, sizeof(client_id), "coap_to_mqtt_%02x%02x",
            linkaddr_node_addr.u8[6], linkaddr_node_addr.u8[7]);
   mqtt_register(&conn, &mqtt_collector_process, client_id, mqtt_event, 128);
   state = STATE_INIT;
   etimer_set(&periodic_timer, CLOCK_SECOND);
 
+  // Get the local IPv6 address, it will be used to request the configuration for this device
   get_local_ipv6_address(local_ipv6_address, sizeof(local_ipv6_address));
 
   while(1) {
@@ -350,6 +356,7 @@ PROCESS_THREAD(mqtt_collector_process, ev, data)
   		}
       }
 
+      // Request the configuration via MQTT
       if (state == STATE_CONFIG_REQUEST) {
         printf("Requesting CoAP server configuration...\n");
 
@@ -365,11 +372,10 @@ PROCESS_THREAD(mqtt_collector_process, ev, data)
   		} else {
    			 printf("Failed to publish. MQTT status: %d\n", status);
   		}
-
-  		etimer_reset(&periodic_timer);
       }
 
 	  if (state == STATE_CONFIG_RECEIVED) {
+        // Read data from all the sensors
         printf("Fetching sensor states...\n");
 
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
