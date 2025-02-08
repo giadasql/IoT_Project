@@ -11,6 +11,8 @@ static void waste_level_to_string(char *buffer, size_t size, void *state) {
     snprintf(buffer, size, "%.2d", *(int *)state);
 }
 
+// Update function for the waste level sensor. The received payload is added to the current value
+// this is only for simulation purposes, in a real scenario the value would be read from the sensor
 static void waste_level_update_state(const char *payload, void *state) {
     *(int *)state += atoi(payload); // Convert payload string to int and add to the current value
 
@@ -22,6 +24,7 @@ static void waste_level_update_state(const char *payload, void *state) {
     printf("Waste level updated to: %.2d%%\n", *(int *)state);
 }
 
+// Define the generic sensor structure
 static generic_sensor_t waste_level_sensor_data = {
     .name = "waste_level_sensor",
     .type = "Numeric",
@@ -30,11 +33,13 @@ static generic_sensor_t waste_level_sensor_data = {
     .update_state = waste_level_update_state
 };
 
+// GET handler for the waste level sensor
 static void waste_level_sensor_get_handler(coap_message_t *request, coap_message_t *response,
                                            uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     generic_get_handler(request, response, buffer, preferred_size, offset, &waste_level_sensor_data);
 }
 
+// PUT handler for the waste level sensor
 static void waste_level_sensor_put_handler(coap_message_t *request, coap_message_t *response,
                                            uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     generic_put_handler(request, response, buffer, preferred_size, offset, &waste_level_sensor_data);

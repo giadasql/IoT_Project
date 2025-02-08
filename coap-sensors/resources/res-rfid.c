@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
-char rfid_code[64] = "No data";
+char rfid_code[64] = "No data"; // default RFID value when no code is read
 
+// Conversion functions for the RFID reader
 static void rfid_code_to_string(char *buffer, size_t size, void *state) {
     snprintf(buffer, size, "%s", (char *)state);
 }
@@ -18,6 +19,7 @@ static generic_sensor_t rfid_reader_data = {
     .update_state = NULL
   };
 
+// GET handler for the RFID reader
 static void rfid_reader_get_handler(coap_message_t *request, coap_message_t *response,
                                       uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     generic_get_handler(request, response, buffer, preferred_size, offset, &rfid_reader_data);
@@ -25,7 +27,7 @@ static void rfid_reader_get_handler(coap_message_t *request, coap_message_t *res
 
 RESOURCE(rfid_reader,
          "title=\"String Sensor\";rt=\"String\"",
-         rfid_reader_get_handler, // GET handler
+         rfid_reader_get_handler,
          NULL,
          NULL,
          NULL);

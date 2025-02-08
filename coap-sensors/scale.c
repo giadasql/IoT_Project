@@ -16,11 +16,10 @@ PROCESS_THREAD(scale_sensor_process, ev, data)
   PROCESS_BEGIN();
 
   // Activate the CoAP resource
-  printf("Starting Scale Sensor...\n");
   coap_activate_resource(&scale_sensor, "scale/value");
 
   while (1) {
-    PROCESS_WAIT_EVENT(); // Wait for events (e.g., CoAP requests)
+    PROCESS_WAIT_EVENT();
   }
 
   PROCESS_END();

@@ -15,8 +15,8 @@ PROCESS_THREAD(waste_level_sensor_process, ev, data)
 {
   PROCESS_BEGIN();
 
+  // Activate the CoAP resource
   coap_activate_resource(&waste_level_sensor, "waste/level");
-
 
   while (1) {
     PROCESS_WAIT_EVENT();
