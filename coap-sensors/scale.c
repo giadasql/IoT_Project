@@ -7,6 +7,7 @@
 
 // Declare the resource from the resource file
 extern coap_resource_t scale_sensor;
+extern coap_resource_t collector_config;
 
 PROCESS(scale_sensor_process, "Scale Sensor Process");
 AUTOSTART_PROCESSES(&scale_sensor_process);
@@ -17,6 +18,8 @@ PROCESS_THREAD(scale_sensor_process, ev, data)
 
   // Activate the CoAP resource
   coap_activate_resource(&scale_sensor, "scale/value");
+  coap_activate_resource(&collector_config, "config/collector");
+
 
   while (1) {
     PROCESS_WAIT_EVENT();

@@ -56,6 +56,7 @@ static uint8_t state;
 
 // Timer for the main process loop
 static struct etimer periodic_timer;
+static struct etimer advertise_timer;
 
 // Structs to save sensor data
 typedef struct {
@@ -318,6 +319,7 @@ PROCESS_THREAD(mqtt_collector_process, ev, data)
 
   // Get the local IPv6 address, it will be used to request the configuration for this device
   get_local_ipv6_address(local_ipv6_address, sizeof(local_ipv6_address));
+
 
   while(1) {
     PROCESS_YIELD();

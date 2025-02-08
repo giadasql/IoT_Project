@@ -8,19 +8,17 @@ typedef struct {
     char *name;
     char *type;
     void *state;
+    char *time_updated;
     void (*to_string)(char *buffer, size_t size, void *state);
     void (*update_state)(const char *payload, void *state);
 } generic_sensor_t;
 
-// Generic handlers
+// Function prototypes
 void generic_get_handler(coap_message_t *request, coap_message_t *response,
                          uint8_t *buffer, uint16_t preferred_size, int32_t *offset,
                          const generic_sensor_t *sensor);
 void generic_put_handler(coap_message_t *request, coap_message_t *response,
                          uint8_t *buffer, uint16_t preferred_size, int32_t *offset,
                          const generic_sensor_t *sensor);
-
-void
-client_chunk_handler(coap_message_t *response);
 
 #endif // SENSOR_UTILS_H
