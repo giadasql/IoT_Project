@@ -1,11 +1,11 @@
 <bins>
     <bin id="bin01">
-        <collector_address>fe80::204:4:4:4</collector_address>cd
-        <lid_sensor_address>fe80::202:2:2:2</lid_sensor_address>
-        <lid_actuator_address>fe80::209:9:9:9</lid_actuator_address>
-        <compactor_sensor_address>fe80::205:5:5:5</compactor_sensor_address>
-        <scale_sensor_address>fe80::206:6:6:6</scale_sensor_address>
-        <waste_level_sensor_address>fe80::207:7:7:7</waste_level_sensor_address>
-        <compactor_actuator_address>fe80::208:8:8:8</compactor_actuator_address>
+        <collector_address>fe80::f6ce:36aa:8370:9738</collector_address>
+        <compactor_sensor_address>fe80::f6ce:367b:9c44:e26a</compactor_sensor_address>
+        <lid_actuator_address>fe80::f6ce:36fc:e563:b772</lid_actuator_address>
+        <lid_sensor_address>fe80::f6ce:36dc:2477:3d6d</lid_sensor_address>
+        <scale_sensor_address>fe80::f6ce:36d4:b744:3ef3</scale_sensor_address>
+        <waste_level_sensor_address>fe80::f6ce:36be:c885:2c83</waste_level_sensor_address>
+        <compactor_actuator_address>fe80::f6ce:3620:b4ba:4310</compactor_actuator_address>
     </bin>
 </bins>
