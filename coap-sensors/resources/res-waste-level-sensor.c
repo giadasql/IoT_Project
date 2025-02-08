@@ -5,23 +5,23 @@
 #include <stdio.h>
 #include <string.h>
 
-// Waste level sensor state
-static float waste_level = 0.0; // Initial waste level (percentage)
+static int waste_level = 0; // Initial waste level (percentage)
 
-// Conversion functions for the waste level sensor
 static void waste_level_to_string(char *buffer, size_t size, void *state) {
-    snprintf(buffer, size, "%.2f", *(float *)state); // Format as a percentage with 2 decimal places
+    snprintf(buffer, size, "%.2d", *(int *)state);
 }
 
+// Update function for the waste level sensor. The received payload is added to the current value
+// this is only for simulation purposes, in a real scenario the value would be read from the sensor
 static void waste_level_update_state(const char *payload, void *state) {
-    *(float *)state += atof(payload); // Convert payload string to float and add to the current value
+    *(int *)state += atoi(payload); // Convert payload string to int and add to the current value
 
-    if (*(float *)state < 0.0) {
-        *(float *)state = 0.0; // Clamp to minimum 0%
-    } else if (*(float *)state > 100.0) {
-        *(float *)state = 100.0; // Clamp to maximum 100%
+    if (*(int *)state < 0.0) {
+        *(int *)state = 0.0; // Clamp to minimum 0%
+    } else if (*(int *)state > 100.0) {
+        *(int *)state = 100.0; // Clamp to maximum 100%
     }
-    printf("Waste level updated to: %.2f%%\n", *(float *)state);
+    printf("Waste level updated to: %.2d%%\n", *(int *)state);
 }
 
 // Define the generic sensor structure
@@ -33,20 +33,20 @@ static generic_sensor_t waste_level_sensor_data = {
     .update_state = waste_level_update_state
 };
 
-// Handlers for CoAP requests
+// GET handler for the waste level sensor
 static void waste_level_sensor_get_handler(coap_message_t *request, coap_message_t *response,
                                            uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     generic_get_handler(request, response, buffer, preferred_size, offset, &waste_level_sensor_data);
 }
 
+// PUT handler for the waste level sensor
 static void waste_level_sensor_put_handler(coap_message_t *request, coap_message_t *response,
                                            uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     generic_put_handler(request, response, buffer, preferred_size, offset, &waste_level_sensor_data);
 }
 
-// Define the CoAP resource
 RESOURCE(waste_level_sensor,
          "title=\"Waste Level Sensor\";rt=\"Numeric\"",
-         waste_level_sensor_get_handler, // GET handler
+         waste_level_sensor_get_handler,
          NULL,
          waste_level_sensor_put_handler, NULL);

@@ -1,6 +1,9 @@
 #include "contiki.h"
 #include "coap-engine.h"
 #include <stdio.h>
+#include "net/ipv6/uip.h"
+#include "net/ipv6/uiplib.h"
+#include "net/ipv6/uip-ds6.h"
 
 // Declare the resource from the resource file
 extern coap_resource_t scale_sensor;
@@ -14,13 +17,12 @@ PROCESS_THREAD(scale_sensor_process, ev, data)
   PROCESS_BEGIN();
 
   // Activate the CoAP resource
-  printf("Starting Scale Sensor...\n");
   coap_activate_resource(&scale_sensor, "scale/value");
   coap_activate_resource(&collector_config, "config/collector");
 
 
   while (1) {
-    PROCESS_WAIT_EVENT(); // Wait for events (e.g., CoAP requests)
+    PROCESS_WAIT_EVENT();
   }
 
   PROCESS_END();

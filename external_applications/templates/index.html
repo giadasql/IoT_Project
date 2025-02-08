@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bin Monitoring System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+<style>
+    body {
+        background-color: #f8f9fa;
+        padding: 20px;
+    }
+
+    .title {
+        text-align: center;
+    }
+
+    .title span {
+        color: #0d6efd;
+        font-weight: bold;
+    }
+
+    .section-title {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .table {
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    .table th,
+    .table td {
+        vertical-align: middle;
+    }
+
+    .table thead {
+        background-color: #0d6efd;
+        color: white;
+        font-weight: bold;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: #f8f9fa;
+    }
+
+    .table-striped tbody tr:hover {
+        background-color: #e9ecef;
+    }
+
+    .fw-bold {
+        font-weight: bold !important;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        padding: 12px;
+        font-size: 14px;
+        font-weight: bold;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        flex: 1;
+        height: 50px;
+    }
+
+    .btn i {
+        font-size: 18px;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #28a745, #34d058);
+        color: white;
+        border: none;
+    }
+
+    .btn-success:hover,
+    .btn-danger:hover,
+    .btn-warning:hover,
+    .btn-primary:hover,
+    .btn-secondary:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #dc3545, #ff6b6b);
+        color: white;
+        border: none;
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, #ffc107, #ffdd57);
+        color: black;
+        border: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #007bff, #3399ff);
+        color: white;
+        border: none;
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #6c757d, #adb5bd);
+        color: white;
+        border: none;
+    }
+
+    .card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+
+    .card-title {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    .card-body h3 {
+        margin-bottom: 15px;
+        color: #495057;
+    }
+    
+    .table th {
+        color: inherit;
+        background-color: inherit;
+    }
+</style>
+
+
+</head>
+<body>
+<div class="container">
+    <h1 class="title">
+        <span>S</span>ystem for <span>C</span>ollection,
+        <span>R</span>ecycling, and <span>A</span>utomated
+        <span>P</span>rocessing
+    </h1>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mt-4" id="binTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="bins-tab" data-bs-toggle="tab" data-bs-target="#bins" type="button"
+                    role="tab" aria-controls="bins" aria-selected="true">
+                Monitoring
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions"
+                    type="button" role="tab" aria-controls="transactions" aria-selected="false">
+                Log
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="alarms-tab" data-bs-toggle="tab" data-bs-target="#alarms" type="button"
+                    role="tab" aria-controls="alarms" aria-selected="false">
+                Alarms
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-4" id="binTabsContent">
+        <!-- Bin Cards Tab -->
+        <div class="tab-pane fade show active" id="bins" role="tabpanel" aria-labelledby="bins-tab">
+            {% for bin in bins %}
+            <div class="card mb-4 mt-3 shadow-sm border-0">
+                <div class="card-body">
+                    <h2 class="card-title text-primary">Bin ID: {{ bin.bin_id }}</h2>
+
+                    <h3 class="mt-4 section-title">Simulation</h3>
+                    <!-- Simulation Buttons -->
+                    <div class="btn-group d-flex justify-content-between flex-wrap gap-3">
+                        <button class="btn btn-danger d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="increment_weight_random('{{ bin.bin_id }}')">
+                            <i class="fas fa-weight me-2"></i> Increment Weight
+                        </button>
+                        <button class="btn btn-danger d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="increment_waste_random('{{ bin.bin_id }}')">
+                            <i class="fas fa-percent me-2"></i> Increment Waste
+                        </button>
+                        <button class="btn btn-primary d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="reduce_waste_random('{{ bin.bin_id }}')">
+                            <i class="fas fa-recycle me-2"></i> Reduce Waste
+                        </button>
+                        <button class="btn btn-success d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="empty_bin('{{ bin.bin_id }}')">
+                            <i class="fas fa-trash me-2"></i> Empty Bin
+                        </button>
+                    </div>
+
+                    <h3 class="mt-5 section-title">Control Panel</h3>
+                    <!-- Control Panel -->
+                    <div class="btn-group d-flex justify-content-between flex-wrap gap-3">
+                        <button class="btn btn-warning d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="sendCoapRequest('{{ bin.bin_id }}', '/compactor/command', 'turn on')">
+                            <i class="fas fa-check me-2"></i> Activate Compactor
+                        </button>
+                        <button class="btn btn-danger d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="sendCoapRequest('{{ bin.bin_id }}', '/compactor/command', 'turn off')">
+                            <i class="fas fa-times me-2"></i> Deactivate Compactor
+                        </button>
+                        <button class="btn btn-primary d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/command', 'open')">
+                            <i class="fas fa-door-open me-2"></i> Open Lid
+                        </button>
+                        <button class="btn btn-secondary d-flex align-items-center justify-content-center flex-grow-1"
+                                onclick="sendCoapRequest('{{ bin.bin_id }}', '/lid/command', 'close')">
+                            <i class="fas fa-door-closed me-2"></i> Close Lid
+                        </button>
+                    </div>
+
+                    <!-- Bin Current State Table -->
+                    <h3 class="mt-5 section-title">Live Data</h3>
+                    <table id="bin-table-{{ bin.bin_id }}" class="table table-striped text-center align-middle">
+                        <thead>
+                        <tr>
+                            <th>Lid</th>
+                            <th>Compactor</th>
+                            <th>Waste Level (%)</th>
+                            <th>Weight (kg)</th>
+                            <th>Last Updated</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            <tr id="bin-row-{{ bin.bin_id }}">
+                                <!-- Rows will be populated by JavaScript -->
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Transactions Tab -->
+        <div class="tab-pane fade" id="transactions" role="tabpanel" aria-labelledby="transactions-tab">
+            <div class="card mb-4 mt-3 shadow-sm border-0">
+                <div class="card-body">
+                    <table id="transaction-table" class="table table-striped text-center align-middle">
+                        <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>RFID</th>
+                            <th>Bin ID</th>
+                            <th>Weight Difference (kg)</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alarm Tab -->
+        <div class="tab-pane fade" id="alarms" role="tabpanel" aria-labelledby="alarms-tab">
+            <div class="card mb-4 mt-3 shadow-sm border-0">
+                <div class="card-body">
+                    <table id="alarm-table" class="table table-striped text-center align-middle">
+                        <thead>
+                        <tr>
+                            <th>Alarm ID</th>
+                            <th>Time</th>
+                            <th>Bin ID</th>
+                            <th>Message</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Bootstrap JS and dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+<script>
+    // Function to send a CoAP request via the Flask backend
+    async function sendCoapRequest(bin_id, path, payload) {
+        try {
+            const response = await fetch('/coap', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({bin_id, path, payload}),
+            });
+            const result = await response.json();
+            console.log(result.message);
+        } catch (error) {
+            console.error('Error sending CoAP request:', error);
+        }
+    }
+
+    // Function to increment weight randomly
+    function increment_weight_random(bin_id) {
+        const weight = Math.random() * 25 + 5;
+        sendCoapRequest(bin_id, '/scale/value', weight.toFixed(2));
+    }
+
+    // Function to increment waste level randomly
+    function increment_waste_random(bin_id) {
+        const waste = Math.random() * 15 + 5;
+        sendCoapRequest(bin_id, '/waste/level', waste.toFixed(2));
+    }
+
+    // Function to reduce waste level randomly
+    function reduce_waste_random(bin_id) {
+        const waste = Math.random() * 20 + 20;
+        sendCoapRequest(bin_id, '/waste/level', (-waste).toFixed(2));
+    }
+
+    // Function to empty the bin
+    function empty_bin(bin_id) {
+        sendCoapRequest(bin_id, '/waste/level', '-100');
+        sendCoapRequest(bin_id, '/scale/value', '-1000');
+    }
+
+    // Function to fetch data and update the table
+    function updateTable() {
+        fetch('/api/bins')
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(bin => {
+                    // Find the table row using the bin_id
+                    const row = document.querySelector(`#bin-table-${bin.bin_id} #bin-row-${bin.bin_id}`);
+                    if (!row) return; // Skip if the row does not exist
+
+                    // Update the row dynamically
+                    row.innerHTML = `
+                    <td>
+                        <span class="${bin.lid_state === 'open' ? 'text-success fw-bold' : 'text-danger fw-bold'}">
+                            ${bin.lid_state === 'open' ? 'OPEN' : 'CLOSED'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="${bin.compactor_state === 'on' ? 'text-success fw-bold' : 'text-danger fw-bold'}">
+                            ${bin.compactor_state === 'on' ? 'ACTIVE' : 'NOT ACTIVE'}
+                        </span>
+                    </td>
+                    <td class="fw-bold">${bin.waste_level}</td>
+                    <td class="fw-bold">${bin.scale_weight}</td>
+                    <td class="fw-bold">${bin.last_updated}</td>
+                `;
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    }
+
+    // Function to fetch transaction data and update the table
+    function updateTransactionTable() {
+        fetch('/api/transactions')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.querySelector('#transaction-table tbody');
+                tableBody.innerHTML = ''; // Clear existing rows
+
+                data.forEach(transaction => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${transaction.transaction_id}</td>
+                        <td>${transaction.rfid}</td>
+                        <td>${transaction.bin_id}</td>
+                        <td>${transaction.weight_diff}</td>
+                        <td>${transaction.start_time}</td>
+                        <td>${transaction.end_time}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching transaction data:', error));
+    }
+
+    // Update the tables every second
+    setInterval(updateTransactionTable, 1000);
+    setInterval(updateTable, 1000);
+
+    // Initial load
+    updateTransactionTable();
+    updateTable();
+</script>
+
+<script>
+    // Function to fetch and update the alarms table
+    function updateAlarmTable() {
+        fetch('/api/alarms')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.querySelector('#alarm-table tbody');
+                tableBody.innerHTML = ''; // Clear existing rows
+
+                data.forEach(alarm => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${alarm.alarm_id}</td>
+                        <td>${alarm.time}</td>
+                        <td>${alarm.bin_id}</td>
+                        <td>${alarm.message}</td>
+                        <td class="fw-bold ${alarm.acknowledged ? 'text-success' : 'text-danger'}">
+                            ${alarm.acknowledged ? 'Acknowledged' : 'Not Acknowledged'}
+                        </td>
+                        <td>
+                            ${alarm.acknowledged ? '' : `<button class="btn btn-warning" onclick="acknowledgeAlarm(${alarm.alarm_id})">Acknowledge</button>`}
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching alarm data:', error));
+    }
+
+    // Function to acknowledge an alarm
+    function acknowledgeAlarm(alarm_id) {
+        fetch('/api/acknowledge_alarm', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({alarm_id}),
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.message);
+                updateAlarmTable(); // Refresh the table after acknowledging
+            })
+            .catch(error => console.error('Error acknowledging alarm:', error));
+    }
+
+    // Update the alarms table every 2 seconds
+    setInterval(updateAlarmTable, 2000);
+
+    // Initial load
+    updateAlarmTable();
+</script>
+</body>
+</html>

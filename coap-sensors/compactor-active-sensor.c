@@ -1,8 +1,8 @@
 #include "contiki.h"
 #include "coap-engine.h"
-#include "sensor_utils.h"
-#include "coap-blocking-api.h"
-#include <stdio.h>
+#include "net/ipv6/uip.h"
+#include "net/ipv6/uiplib.h"
+#include "net/ipv6/uip-ds6.h"
 
 // Declare the resource from the resource file
 extern coap_resource_t compactor_active_sensor;
@@ -20,16 +20,14 @@ extern bool update_required;
 // Timer for periodic checking
 static struct etimer update_timer;
 
-PROCESS(device_process, "Device Process");
+PROCESS(device_process, "Compactor Sensor Process");
 AUTOSTART_PROCESSES(&device_process);
+
 
 PROCESS_THREAD(device_process, ev, data) {
   PROCESS_BEGIN();
 
-  // Set the timer to check for updates every second
-  etimer_set(&update_timer, CLOCK_SECOND * 5);
-
-  // Activate Resources
+  // Activate the CoAP resource
   coap_activate_resource(&compactor_active_sensor, "compactor/active");
   coap_activate_resource(&collector_config, "config/collector");
 

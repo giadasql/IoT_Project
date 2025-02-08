@@ -10,10 +10,7 @@ MODULES += $(CONTIKI_NG_APP_LAYER_DIR)/mqtt
 include $(CONTIKI)/Makefile.identify-target
 
 MODULES_REL += arch/platform/$(TARGET)
-MODULES_REL += ../jsmn ../utils ./resources
-PROJECT_SOURCEFILES += time_utils.c
-PROJECT_SOURCEFILES += resource_utils.c
-
+MODULES_REL += ../jsmn ../utils
 
 
 include $(CONTIKI)/Makefile.include

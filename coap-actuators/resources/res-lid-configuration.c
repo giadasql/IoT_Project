@@ -4,101 +4,46 @@
 #include <stdio.h>
 #include <string.h>
 
-// Sensor Configuration Structure
-typedef struct {
-    char endpoint_uri[64];
-    coap_endpoint_t address;
-    const char *name;
-    const char *resource_path;
-} sensor_config_t;
+// --------------------- ONLY NEEDED FOR SIMULATION ---------------------
+// For simulation purposes, we need to store the address of the lid sensor because the
+// lid actuator needs to send CoAP requests to the lid sensor to toggle its state.
 
-// Sensor Configurations
-sensor_config_t lid_sensor = {"", {}, "lid_sensor", "lid/config"};
-sensor_config_t scale_sensor = {"", {}, "scale_sensor", "scale/config"};
-sensor_config_t waste_level_sensor = {"", {}, "waste_level_sensor", "waste/config"};
+// Store the address of the lid sensor
+char lid_sensor_endpoint_uri[64] = "";
+coap_endpoint_t lid_sensor_address;
 
-// Helper Function to Configure Sensor
-static bool configure_sensor(const char *payload, sensor_config_t *sensor) {
-    if (strlen(payload) >= sizeof(sensor->endpoint_uri)) {
-        printf("Payload too large for %s configuration.\n", sensor->name);
-        return false;
-    }
+// CoAP PUT handler to configure the lid sensor address
+static void lid_sensor_endpoint_put_handler(coap_message_t *request, coap_message_t *response,
+                                            uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
 
-    strncpy(sensor->endpoint_uri, payload, sizeof(sensor->endpoint_uri) - 1);
-    sensor->endpoint_uri[sizeof(sensor->endpoint_uri) - 1] = '\0';
+    printf("CoAP handler invoked with payload: %.*s\n", preferred_size, buffer);
+    size_t len = coap_get_payload(request, (const uint8_t **)&buffer);
 
-    if (coap_endpoint_parse(sensor->endpoint_uri, strlen(sensor->endpoint_uri), &sensor->address)) {
-        printf("Configured %s endpoint: %s\n", sensor->name, sensor->endpoint_uri);
-        return true;
+    if (len > 0 && len < sizeof(lid_sensor_endpoint_uri)) {
+        strncpy(lid_sensor_endpoint_uri, (char *)buffer, len);
+        lid_sensor_endpoint_uri[len] = '\0';
+
+        if (coap_endpoint_parse(lid_sensor_endpoint_uri, strlen(lid_sensor_endpoint_uri), &lid_sensor_address)) {
+            printf("Configured lid sensor endpoint: %s\n", lid_sensor_endpoint_uri);
+            coap_set_status_code(response, CHANGED_2_04);
+        } else {
+            printf("Invalid CoAP endpoint: %s\n", lid_sensor_endpoint_uri);
+            coap_set_status_code(response, BAD_REQUEST_4_00);
+        }
     } else {
-        printf("Invalid CoAP endpoint for %s: %s\n", sensor->name, sensor->endpoint_uri);
-        return false;
+        printf("Invalid configuration payload.\n");
+        coap_set_status_code(response, BAD_REQUEST_4_00);
     }
 }
 
-// Generic PUT Handler for Sensor Configuration
-static void sensor_config_put_handler(coap_message_t *req, coap_message_t *res,
-                                      uint8_t *buf, uint16_t preferred_size, int32_t *offset,
-                                      sensor_config_t *sensor) {
-    const uint8_t *payload;
-    size_t len = coap_get_payload(req, &payload);
-
-    if (len > 0 && configure_sensor((const char *)payload, sensor)) {
-        coap_set_status_code(res, CHANGED_2_04);
-    } else {
-        printf("Failed to configure %s.\n", sensor->name);
-        coap_set_status_code(res, BAD_REQUEST_4_00);
-    }
+// CoAP GET handler to retrieve the lid sensor address
+static void lid_sensor_endpoint_get_handler(coap_message_t *request, coap_message_t *response,
+                                            uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
+    snprintf((char *)buffer, preferred_size, "{\"uri\":\"%s\"}", lid_sensor_endpoint_uri);
+    coap_set_header_content_format(response, TEXT_PLAIN);
+    coap_set_payload(response, buffer, strlen((char *)buffer));
 }
 
-// Generic GET Handler for Sensor Configuration
-static void sensor_config_get_handler(coap_message_t *req, coap_message_t *res,
-                                      uint8_t *buf, uint16_t preferred_size, int32_t *offset,
-                                      sensor_config_t *sensor) {
-    snprintf((char *)buf, preferred_size, "{\"uri\":\"%s\"}", sensor->endpoint_uri);
-    coap_set_header_content_format(res, APPLICATION_JSON);
-    coap_set_payload(res, buf, strlen((char *)buf));
-}
-
-// CoAP Handlers for Lid Sensor
-static void lid_sensor_put_handler(coap_message_t *req, coap_message_t *res,
-                                   uint8_t *buf, uint16_t preferred_size, int32_t *offset) {
-    sensor_config_put_handler(req, res, buf, preferred_size, offset, &lid_sensor);
-}
-
-static void lid_sensor_get_handler(coap_message_t *req, coap_message_t *res,
-                                   uint8_t *buf, uint16_t preferred_size, int32_t *offset) {
-    sensor_config_get_handler(req, res, buf, preferred_size, offset, &lid_sensor);
-}
-
-// CoAP Handlers for Scale Sensor
-static void scale_sensor_put_handler(coap_message_t *req, coap_message_t *res,
-                                     uint8_t *buf, uint16_t preferred_size, int32_t *offset) {
-    sensor_config_put_handler(req, res, buf, preferred_size, offset, &scale_sensor);
-}
-
-static void scale_sensor_get_handler(coap_message_t *req, coap_message_t *res,
-                                     uint8_t *buf, uint16_t preferred_size, int32_t *offset) {
-    sensor_config_get_handler(req, res, buf, preferred_size, offset, &scale_sensor);
-}
-
-// CoAP Handlers for Waste Level Sensor
-static void waste_level_sensor_put_handler(coap_message_t *req, coap_message_t *res,
-                                           uint8_t *buf, uint16_t preferred_size, int32_t *offset) {
-    sensor_config_put_handler(req, res, buf, preferred_size, offset, &waste_level_sensor);
-}
-
-static void waste_level_sensor_get_handler(coap_message_t *req, coap_message_t *res,
-                                           uint8_t *buf, uint16_t preferred_size, int32_t *offset) {
-    sensor_config_get_handler(req, res, buf, preferred_size, offset, &waste_level_sensor);
-}
-
-// CoAP Resources
-RESOURCE(lid_sensor_config, "title=\"Lid Sensor Config\";rt=\"Text\"",
-         lid_sensor_get_handler, NULL, lid_sensor_put_handler, NULL);
-
-RESOURCE(scale_sensor_config, "title=\"Scale Sensor Config\";rt=\"Text\"",
-         scale_sensor_get_handler, NULL, scale_sensor_put_handler, NULL);
-
-RESOURCE(waste_level_sensor_config, "title=\"Waste Level Sensor Config\";rt=\"Text\"",
-         waste_level_sensor_get_handler, NULL, waste_level_sensor_put_handler, NULL);
+// CoAP resource for configuring the lid sensor address
+RESOURCE(lid_sensor_endpoint, "title=\"Configure Lid Sensor Endpoint\";rt=\"Text\"",
+         lid_sensor_endpoint_get_handler, NULL, lid_sensor_endpoint_put_handler, NULL);
