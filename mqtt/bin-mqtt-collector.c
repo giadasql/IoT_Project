@@ -301,23 +301,22 @@ static void send_aggregated_mqtt_message(void) {
     printf("Published aggregated data to MQTT: %s\n", pub_msg);
 }
 
-// Helper Function to get the global IPv6 address
-static void get_global_ipv6_address(char *buffer, size_t buffer_size) {
+// Helper Function to get the local IPv6 address
+static void get_local_ipv6_address(char *buffer, size_t buffer_size) {
     uip_ds6_addr_t *addr = NULL;
 
     // Iterate through all IPv6 addresses
     for (addr = uip_ds6_if.addr_list; addr < uip_ds6_if.addr_list + UIP_DS6_ADDR_NB; addr++) {
-        // Check if the address is used and is a global address
-        if (addr->isused && !uip_is_addr_linklocal(&addr->ipaddr) && !uip_is_addr_mcast(&addr->ipaddr)) {
+        // Check if the address is used and is a link-local address
+        if (addr->isused && uip_is_addr_linklocal(&addr->ipaddr)) {
             uiplib_ipaddr_snprint(buffer, buffer_size, &addr->ipaddr);
             return;
         }
     }
 
-    // If no global address is found, set to "unknown"
+    // If no link-local address is found, set to "unknown"
     snprintf(buffer, buffer_size, "unknown");
 }
-
 
 // Main process
 PROCESS_THREAD(mqtt_collector_process, ev, data)
@@ -332,7 +331,7 @@ PROCESS_THREAD(mqtt_collector_process, ev, data)
   etimer_set(&periodic_timer, CLOCK_SECOND);
 
   // Get the local IPv6 address, it will be used to request the configuration for this device
-  get_global_ipv6_address(local_ipv6_address, sizeof(local_ipv6_address));
+  get_local_ipv6_address(local_ipv6_address, sizeof(local_ipv6_address));
 
   while(1) {
     PROCESS_YIELD();
