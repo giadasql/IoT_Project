@@ -84,20 +84,6 @@ static int jsmn_token_equals(const char *json, const jsmntok_t *tok, const char 
           strncmp(json + tok->start, key, tok->end - tok->start) == 0);
 }
 
-void client_chunk_handler(coap_message_t *response)
-{
-  const uint8_t *chunk;
-
-  if(response == NULL) {
-    puts("Request timed out");
-    return;
-  }
-
-  int len = coap_get_payload(response, &chunk);
-
-  printf("|%.*s\n", len, (char *)chunk);
-}
-
 // Handler for configuration response
 static void configuration_received_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk, uint16_t chunk_len) {
     printf("Pub Handler: topic='%s' (len=%u), chunk_len=%u\n", topic, topic_len, chunk_len);
