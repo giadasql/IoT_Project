@@ -18,36 +18,34 @@
 #define LOG_MODULE "CoAP-to-MQTT"
 #define LOG_LEVEL LOG_LEVEL_DBG
 
-/* MQTT broker configuration */
+// MQTT broker configuration
 #define MQTT_CLIENT_BROKER_IP_ADDR "fd00::1"
 #define DEFAULT_BROKER_PORT 1883
 #define CONFIG_REQUEST_TOPIC "config/request"
 #define CONFIG_RESPONSE_TOPIC "config/response"
+static char pub_msg[1024];
+static char client_id[64];
+static struct mqtt_connection conn;
 
-
-/* CoAP variables */
-static coap_endpoint_t lid_server_endpoint;
-static coap_endpoint_t compactor_server_endpoint;
-static coap_endpoint_t scale_server_endpoint;
-static coap_endpoint_t waste_level_server_endpoint;
+// CoAP endpoints for all sensors that the collector will interact with
+static coap_endpoint_t lid_sensor_endpoint;
+static coap_endpoint_t compactor_sensor_endpoint;
+static coap_endpoint_t scale_sensor_endpoint;
+static coap_endpoint_t waste_level_sensor_endpoint;
 
 static char compactor_sensor_uri[64] = {0};
 static char lid_sensor_uri[64] = {0};
 static char waste_level_sensor_uri[64] = {0};
 static char scale_sensor_uri[64] = {0};
-static uint8_t send_config_flag = 0;
 
 static coap_message_t request[1];
 
-/* MQTT variables */
-static char client_id[64];
-static char pub_msg[1024];
+// Variables to store the bin ID and local IPv6 address
 static char bin_id[64] = "unknown";
-static char local_ipv6_address[64]; // Buffer for local IPv6 address
-static struct mqtt_connection conn;
+static char local_ipv6_address[64];
 
+// State machine
 static uint8_t state;
-
 #define STATE_INIT 0
 #define STATE_NET_OK 1
 #define STATE_CONFIG_REQUEST 2
@@ -56,13 +54,14 @@ static uint8_t state;
 #define STATE_CONNECTED 5
 #define STATE_DISCONNECTED 6
 
+// Timer for the main process loop
 static struct etimer periodic_timer;
 
+// Structs to save sensor data
 typedef struct {
     char value[64];
 } sensor_data_t;
 
-// Structure to hold data for both sensors
 typedef struct {
     sensor_data_t lid_sensor;
     sensor_data_t compactor_sensor;
@@ -73,11 +72,11 @@ typedef struct {
 
 static collector_data_t collector_data;
 
-PROCESS(coap_to_mqtt_process, "CoAP-to-MQTT Bridge");
-AUTOSTART_PROCESSES(&coap_to_mqtt_process);
 
+PROCESS(mqtt_collector_process, "MQTT Collector Process");
+AUTOSTART_PROCESSES(&mqtt_collector_process);
 
-/* Helper Function: Check if a token equals a string */
+// Helper Function: Check if a token is equal to a string
 static int jsmn_token_equals(const char *json, const jsmntok_t *tok, const char *key)
 {
   return (tok->type == JSMN_STRING &&
@@ -99,13 +98,16 @@ void client_chunk_handler(coap_message_t *response)
   printf("|%.*s\n", len, (char *)chunk);
 }
 
-static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk, uint16_t chunk_len) {
+// Handler for configuration response
+static void configuration_received_handler(const char *topic, uint16_t topic_len, const uint8_t *chunk, uint16_t chunk_len) {
     printf("Pub Handler: topic='%s' (len=%u), chunk_len=%u\n", topic, topic_len, chunk_len);
 
+    // Check if the topic is the configuration response topic
     if (strcmp(topic, CONFIG_RESPONSE_TOPIC) != 0) {
         return;
     }
 
+    // variables to store the received addresses
     char received_collector_address[64] = {0};
     char received_bin_id[64] = {0};
     char lid_server_address[64] = {0};
@@ -113,6 +115,7 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
     char scale_server_address[64] = {0};
     char waste_level_server_address[64] = {0};
 
+    // Mapping between JSON keys and variables
     struct {
         char *key;
         char *buffer;
@@ -126,8 +129,9 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
         {"waste_level_server_address", waste_level_server_address, sizeof(waste_level_server_address)}
     };
 
+    // Parse the JSON response using JSMN
     jsmn_parser parser;
-    jsmntok_t tokens[32]; // Adjust size based on expected tokens
+    jsmntok_t tokens[32];
     jsmn_init(&parser);
     int token_count = jsmn_parse(&parser, (const char *)chunk, chunk_len, tokens, sizeof(tokens) / sizeof(tokens[0]));
 
@@ -138,9 +142,11 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
 
     for (int i = 1; i < token_count - 1; i++) {
         for (size_t j = 0; j < sizeof(config_mappings) / sizeof(config_mappings[0]); j++) {
+          // if the token is equal to the key, copy the value to the buffer
             if (jsmn_token_equals((const char *)chunk, &tokens[i], config_mappings[j].key)) {
                 size_t len = tokens[i + 1].end - tokens[i + 1].start;
                 len = len < config_mappings[j].size ? len : config_mappings[j].size - 1;
+                // Copy the value to the buffer
                 strncpy(config_mappings[j].buffer, (const char *)chunk + tokens[i + 1].start, len);
                 config_mappings[j].buffer[len] = '\0';
                 i++; // Skip the value token
@@ -157,17 +163,16 @@ static void pub_handler(const char *topic, uint16_t topic_len, const uint8_t *ch
         printf("Waste Level Server Address: %s\n", waste_level_server_address);
 
         strncpy(bin_id, received_bin_id, sizeof(bin_id));
-        coap_endpoint_parse(lid_server_address, strlen(lid_server_address), &lid_server_endpoint);
-        coap_endpoint_parse(compactor_server_address, strlen(compactor_server_address), &compactor_server_endpoint);
-        coap_endpoint_parse(scale_server_address, strlen(scale_server_address), &scale_server_endpoint);
-        coap_endpoint_parse(waste_level_server_address, strlen(waste_level_server_address), &waste_level_server_endpoint);
+        coap_endpoint_parse(lid_server_address, strlen(lid_server_address), &lid_sensor_endpoint);
+        coap_endpoint_parse(compactor_server_address, strlen(compactor_server_address), &compactor_sensor_endpoint);
+        coap_endpoint_parse(scale_server_address, strlen(scale_server_address), &scale_sensor_endpoint);
+        coap_endpoint_parse(waste_level_server_address, strlen(waste_level_server_address), &waste_level_sensor_endpoint);
 
         strncpy(compactor_sensor_uri, compactor_server_address, sizeof(compactor_sensor_uri));
         strncpy(lid_sensor_uri, lid_server_address, sizeof(lid_sensor_uri));
         strncpy(scale_sensor_uri, scale_server_address, sizeof(scale_sensor_uri));
         strncpy(waste_level_sensor_uri, waste_level_server_address, sizeof(waste_level_sensor_uri));
 
-        send_config_flag = 1;
         state = STATE_CONFIG_RECEIVED;
     } else {
         printf("Response is not for this collector. Ignored.\n");
@@ -186,14 +191,14 @@ static void mqtt_event(struct mqtt_connection *m, mqtt_event_t event, void *data
     case MQTT_EVENT_DISCONNECTED:
       printf("MQTT Disconnect. Reason %u\n", *((mqtt_event_t *)data));
       state = STATE_DISCONNECTED;
-      process_poll(&coap_to_mqtt_process);
+      process_poll(&mqtt_collector_process);
       break;
 
     case MQTT_EVENT_PUBLISH:
       {
       	printf("Received MQTT message\n");
         struct mqtt_message *msg = data;
-        pub_handler(msg->topic, strlen(msg->topic), msg->payload_chunk, msg->payload_length);
+        configuration_received_handler(msg->topic, strlen(msg->topic), msg->payload_chunk, msg->payload_length);
       }
       break;
 
@@ -311,12 +316,12 @@ static void get_local_ipv6_address(char *buffer, size_t buffer_size) {
 }
 
 /* Main Process */
-PROCESS_THREAD(coap_to_mqtt_process, ev, data)
+PROCESS_THREAD(mqtt_collector_process, ev, data)
 {
   PROCESS_BEGIN();
   snprintf(client_id, sizeof(client_id), "coap_to_mqtt_%02x%02x",
            linkaddr_node_addr.u8[6], linkaddr_node_addr.u8[7]);
-  mqtt_register(&conn, &coap_to_mqtt_process, client_id, mqtt_event, 128);
+  mqtt_register(&conn, &mqtt_collector_process, client_id, mqtt_event, 128);
   state = STATE_INIT;
   etimer_set(&periodic_timer, CLOCK_SECOND);
 
@@ -369,23 +374,23 @@ PROCESS_THREAD(coap_to_mqtt_process, ev, data)
 
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, "/compactor/active");
-        COAP_BLOCKING_REQUEST(&compactor_server_endpoint, request, compactor_sensor_callback);
+        COAP_BLOCKING_REQUEST(&compactor_sensor_endpoint, request, compactor_sensor_callback);
 
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, "/lid/open");
-        COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, lid_sensor_callback);
+        COAP_BLOCKING_REQUEST(&lid_sensor_endpoint, request, lid_sensor_callback);
 
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, "/rfid/value");
-        COAP_BLOCKING_REQUEST(&lid_server_endpoint, request, rfid_callback);
+        COAP_BLOCKING_REQUEST(&lid_sensor_endpoint, request, rfid_callback);
 
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, "/scale/value");
-        COAP_BLOCKING_REQUEST(&scale_server_endpoint, request, scale_sensor_callback);
+        COAP_BLOCKING_REQUEST(&scale_sensor_endpoint, request, scale_sensor_callback);
 
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, "/waste/level");
-        COAP_BLOCKING_REQUEST(&waste_level_server_endpoint, request, waste_level_sensor_callback);
+        COAP_BLOCKING_REQUEST(&waste_level_sensor_endpoint, request, waste_level_sensor_callback);
 
         send_aggregated_mqtt_message();
       }

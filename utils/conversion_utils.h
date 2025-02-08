@@ -10,7 +10,4 @@ void boolean_update_state(const char *payload, void *state);
 void integer_to_string(char *buffer, size_t size, void *state);
 void integer_update_state(const char *payload, void *state);
 
-void decimal_to_string(char *buffer, size_t size, void *state);
-void decimal_update_state(const char *payload, void *state);
-
 #endif // CONVERSION_UTILS_H

@@ -7,10 +7,7 @@
 // Boolean Conversion
 void boolean_to_string(char *buffer, size_t size, void *state) {
     bool value = *(bool *)state;
-    printf("Value: %d\n", value);
     snprintf(buffer, size, "%s", value ? "true" : "false");
-    printf("Buffer: %s\n", buffer);
-    //snprintf(buffer, size, "%s", (*(int *)state) ? "true" : "false");
 }
 
 void boolean_update_state(const char *payload, void *state) {
@@ -24,13 +21,4 @@ void integer_to_string(char *buffer, size_t size, void *state) {
 
 void integer_update_state(const char *payload, void *state) {
     *(int *)state = atoi(payload);
-}
-
-// Decimal Conversion
-void decimal_to_string(char *buffer, size_t size, void *state) {
-    snprintf(buffer, size, "%.2f", *(float *)state);
-}
-
-void decimal_update_state(const char *payload, void *state) {
-    *(float *)state = atof(payload);
 }
