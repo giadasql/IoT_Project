@@ -8,17 +8,13 @@ import xml.etree.ElementTree as ET
 # Configuration
 DATABASE_CONFIG = {
     'host': 'localhost',
-    #'user': 'root',
     'user': 'iot-project',
-    #'password': 'moka',
     'password': 'iot-password',
     'database': 'scrap'
 }
 
-WASTE_LEVEL_THRESHOLD = 80.0  # Set your waste level threshold here
+WASTE_LEVEL_THRESHOLD = 80.0  # Waste level threshold in percentage
 POLLING_INTERVAL = 1  # Polling interval in seconds
-
-compactor_activated = False
 
 # Parse the config.xml file to get CoAP server addresses
 def parse_config_xml():
@@ -29,11 +25,11 @@ def parse_config_xml():
         bin_id = bin.get('id')
         bins[bin_id] = {
             'collector_address': bin.find('collector_address').text,
-            'lid_server_address': bin.find('lid_server_address').text,
+            'lid_sensor_address': bin.find('lid_sensor_address').text,
             'lid_actuator_address': bin.find('lid_actuator_address').text,
-            'compactor_server_address': bin.find('compactor_server_address').text,
-            'scale_server_address': bin.find('scale_server_address').text,
-            'waste_level_server_address': bin.find('waste_level_server_address').text,
+            'compactor_sensor_address': bin.find('compactor_sensor_address').text,
+            'scale_sensor_address': bin.find('scale_sensor_address').text,
+            'waste_level_sensor_address': bin.find('waste_level_sensor_address').text,
             'compactor_actuator_address': bin.find('compactor_actuator_address').text,
         }
     return bins
@@ -44,7 +40,7 @@ app = Flask(__name__)
 # Initialize logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
-# Function to fetch data from the database
+# Function to fetch the current state from the database
 def fetch_bin_data():
     try:
         connection = mysql.connector.connect(**DATABASE_CONFIG)
@@ -58,6 +54,7 @@ def fetch_bin_data():
         logging.error(f"Database error: {err}")
         return []
 
+# Function to fetch transaction data from the database
 def fetch_transaction_data():
     try:
         connection = mysql.connector.connect(**DATABASE_CONFIG)
@@ -71,35 +68,34 @@ def fetch_transaction_data():
         logging.error(f"Database error: {err}")
         return []
 
-# Function to send a CoAP PUT request using CoAPthon3
+# Function to send CoAP PUT requests
 def send_coap_put_request(bin_id, path, payload):
     bins = parse_config_xml()
     if bin_id not in bins:
         logging.error(f"Bin ID {bin_id} not found in config.xml")
         return False
 
-    coap_server_address = None
+    # Get CoAP server address based on the path
+    coap_sensor_address = None
     if path.startswith('/compactor/config') or path.startswith('/compactor/command'):
-        coap_server_address = (bins[bin_id]['compactor_actuator_address'], 5683)
+        coap_sensor_address = (bins[bin_id]['compactor_actuator_address'], 5683)
     elif path.startswith('/lid/config') or path.startswith('/lid/command'):
-        coap_server_address = (bins[bin_id]['lid_actuator_address'], 5683)
+        coap_sensor_address = (bins[bin_id]['lid_actuator_address'], 5683)
     elif path.startswith('/compactor'):
-        coap_server_address = (bins[bin_id]['compactor_server_address'], 5683)
+        coap_sensor_address = (bins[bin_id]['compactor_sensor_address'], 5683)
     elif path.startswith('/lid'):
-        coap_server_address = (bins[bin_id]['lid_server_address'], 5683)
+        coap_sensor_address = (bins[bin_id]['lid_sensor_address'], 5683)
     elif path.startswith('/scale'):
-        coap_server_address = (bins[bin_id]['scale_server_address'], 5683)
+        coap_sensor_address = (bins[bin_id]['scale_sensor_address'], 5683)
     elif path.startswith('/waste'):
-        coap_server_address = (bins[bin_id]['waste_level_server_address'], 5683)
+        coap_sensor_address = (bins[bin_id]['waste_level_sensor_address'], 5683)
 
-    if not coap_server_address:
+    if not coap_sensor_address:
         logging.error(f"No CoAP server address found for path {path}")
         return False
 
     try:
-        # replace fe80:: with fd00:: for local testing
-        coap_server_address = (coap_server_address[0].replace('fe80::', 'fd00::'), coap_server_address[1])
-        client = HelperClient(server=coap_server_address)
+        client = HelperClient(server=coap_sensor_address)
         response = client.put(path, payload)
         client.stop()
         logging.info(f"CoAP PUT request sent to {path}. Response: {response.payload}")
@@ -120,10 +116,11 @@ def insert_alarm(bin_id, message):
     except mysql.connector.Error as err:
         logging.error(f"Database error: {err}")
 
-
-
+# Dictionary to store the compactor state for each bin, used to determine if an alarm should be inserted
 compactor_states = {}
 
+# Function to check the waste level of each bin and activate the compactor if the waste level exceeds the threshold
+# Also inserts an alarm into the database if the compactor is turned off while the waste level exceeds the threshold
 def check_waste_level():
     bins = fetch_bin_data()
     global compactor_states
@@ -132,9 +129,10 @@ def check_waste_level():
         if bin['bin_id'] not in compactor_states:
             compactor_states[bin['bin_id']] = bin['compactor_state']
         
+        # Check if waste level exceeds the threshold
         if bin['waste_level'] > WASTE_LEVEL_THRESHOLD:
             if bin['compactor_state'] == "off" and compactor_states[bin['bin_id']] == "on": # compactor just turned off
-                # check if there is an alarm for this bin already
+                # check if there is an alarm for this bin already, if not insert one
                 alarms = fetch_alarm_data()
                 alarm_exists = False
                 for alarm in alarms:
@@ -152,17 +150,17 @@ def check_waste_level():
             else:
                 logging.info(f"Compactor is already active for bin {bin['bin_id']}. Skipping CoAP request.")
         
+        # Update compactor state
         compactor_states[bin['bin_id']] = bin['compactor_state']
-
 
 # send configuration over coap to compactor actuator and lid actuator (FOR SIMULATION PURPOSES ONLY)
 def send_configuration_over_coap():
     bins = parse_config_xml()
     for bin_id, bin_data in bins.items():
         # Send configuration to compactor actuator
-        send_coap_put_request(bin_id, "/compactor/config", f"{bin_data['compactor_server_address']}")
+        send_coap_put_request(bin_id, "/compactor/config", f"{bin_data['compactor_sensor_address']}")
         # Send configuration to lid actuator
-        send_coap_put_request(bin_id, "/lid/config", f"{bin_data['lid_server_address']}")
+        send_coap_put_request(bin_id, "/lid/config", f"{bin_data['lid_sensor_address']}")
         
 # Send configuration to actuators on startup
 send_configuration_over_coap()
@@ -172,24 +170,19 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(check_waste_level, 'interval', seconds=POLLING_INTERVAL)
 scheduler.start()
 
-# Flask route to display the current state of bins
-@app.route('/')
-def index():
-    bins = fetch_bin_data()
-    return render_template('index.html', bins=bins)
-
-# Flask route to serve JSON data
+# Flask route to fetch current bin data
 @app.route('/api/bins')
 def get_bins():
     bins = fetch_bin_data()
     return jsonify(bins)
 
+# Function to fetch transactions from the database
 @app.route('/api/transactions')
 def get_transactions():
     transactions = fetch_transaction_data()
     return jsonify(transactions)
 
-# Flask route to handle CoAP requests from the UI
+# Flask route to send CoAP requests from the UI
 @app.route('/coap', methods=['POST'])
 def handle_coap_request():
     data = request.json
@@ -206,7 +199,7 @@ def handle_coap_request():
         return jsonify({'message': 'CoAP request failed'}), 500
 
 
-    # Function to fetch alarms from the database
+# Function to fetch alarms from the database
 def fetch_alarm_data():
     try:
         connection = mysql.connector.connect(**DATABASE_CONFIG)

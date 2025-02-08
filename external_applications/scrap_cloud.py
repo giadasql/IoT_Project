@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 import json
 from datetime import datetime
 
-# MySQL connection details
+# MySQL connection 
 DB_CONFIG = {
     "host": "localhost",
     "user": "iot-project",
@@ -13,20 +13,18 @@ DB_CONFIG = {
 }
 
 # MQTT configuration
-BROKER_ADDRESS = "10.65.2.143"
-# BROKER_ADDRESS = "172.20.10.13"
+BROKER_ADDRESS = "localhost"
 BROKER_PORT = 1883
-MQTT_TOPIC = "bins"
+UPDATES_TOPIC = "bins"
 CONFIG_REQUEST_TOPIC = "config/request"
 CONFIG_RESPONSE_TOPIC = "config/response"
 
-# In-memory state storage
+# In-memory state 
 bins_state = {}
 bins_config = {}
 
 # Load configuration from XML
 def load_config_from_xml(xml_file):
-    """Load bin configuration from an XML file."""
     global bins_config
     tree = ET.parse(xml_file)
     root = tree.getroot()
@@ -34,10 +32,10 @@ def load_config_from_xml(xml_file):
         bin_id = bin_element.get("id")
         bins_config[bin_id] = {
             "collector_address": bin_element.find("collector_address").text,
-            "lid_server_address": bin_element.find("lid_server_address").text,
-            "compactor_server_address": bin_element.find("compactor_server_address").text,
-            "scale_server_address": bin_element.find("scale_server_address").text,
-            "waste_level_server_address": bin_element.find("waste_level_server_address").text,
+            "lid_sensor_address": bin_element.find("lid_sensor_address").text,
+            "compactor_sensor_address": bin_element.find("compactor_sensor_address").text,
+            "scale_sensor_address": bin_element.find("scale_sensor_address").text,
+            "waste_level_sensor_address": bin_element.find("waste_level_sensor_address").text,
             "compactor_actuator_address": bin_element.find("compactor_actuator_address").text,
             "lid_actuator_address": bin_element.find("lid_actuator_address").text
         }
@@ -45,7 +43,6 @@ def load_config_from_xml(xml_file):
 
 # Handle configuration requests
 def handle_config_request(request):
-    """Handle an incoming configuration request."""
     collector_address = request.get("collector_address")
     for bin_id, config in bins_config.items():
         if config["collector_address"] == collector_address:
@@ -54,7 +51,6 @@ def handle_config_request(request):
             return response
     return None
 
-
 # Connect to the database
 def connect_to_db():
     """Establish a connection to the MySQL database."""
@@ -62,7 +58,6 @@ def connect_to_db():
 
 # Update the current state in the database
 def update_current_state(cursor, bin_id, data):
-    """Update the current state of the bin in the database."""
     query = """
         INSERT INTO bins_current_state (bin_id, rfid, lid_state, compactor_state, waste_level, scale_weight)
         VALUES (%s, %s, %s, %s, %s, %s)
@@ -85,7 +80,6 @@ def update_current_state(cursor, bin_id, data):
 
 # Log changes in the database
 def log_changes(cursor, bin_id, changes):
-    """Log changes to the bin's state."""
     query = """
         INSERT INTO bins_change_log (bin_id, sensor_name, new_value, change_timestamp)
         VALUES (%s, %s, %s, %s);
@@ -95,7 +89,6 @@ def log_changes(cursor, bin_id, changes):
 
 # Handle incoming MQTT messages
 def on_message(client, userdata, msg):
-    """Handle incoming MQTT messages."""
     print(f"Received message on topic {msg.topic}: {msg.payload.decode()}")
     try:
         # Parse JSON payload
@@ -107,8 +100,8 @@ def on_message(client, userdata, msg):
             return
 
         # Handle sensor updates
-        if msg.topic == MQTT_TOPIC:
-            handle_sensor_update(client, data)
+        if msg.topic == UPDATES_TOPIC:
+            handle_sensor_update(data)
             return
 
         print(f"Unhandled message on topic {msg.topic}.")
@@ -118,13 +111,12 @@ def on_message(client, userdata, msg):
 
 # Handle configuration request messages
 def handle_config_request_message(client, data):
-    """Handle a configuration request message."""
     collector_address = data.get("collector_address")
     if not collector_address:
         print("No collector_address found in configuration request. Skipping...")
         return
 
-    # Fetch configuration for the collector
+    # Fetch configuration for the collector and publish it on the response topic
     response = handle_config_request(data)
     if response:
         client.publish(CONFIG_RESPONSE_TOPIC, json.dumps(response))
@@ -132,16 +124,14 @@ def handle_config_request_message(client, data):
     else:
         print(f"No configuration found for collector_address: {collector_address}")
 
-# Utility function to normalize decimal values
+# Utility function to normalize decimal values to handle different formats
 def normalize_decimal(value):
-    """Convert a numeric string with commas to a proper decimal format."""
     if isinstance(value, str):
         return value.replace(",", ".")
     return value
 
 # Track the start and end times of lid open/close states
-def handle_sensor_update(client, data):
-    """Handle a sensor update message."""
+def handle_sensor_update(data):
     bin_id = data.get("bin_id")
     if not bin_id:
         print("No bin_id found in update message. Skipping...")
@@ -159,7 +149,6 @@ def handle_sensor_update(client, data):
     # Detect changes by comparing new values with the in-memory state
     sensors = {
         "rfid": rfid,
-        # set open or closed if true or false
         "lid_sensor": data.get("lid_sensor"),
         "compactor_sensor": data.get("compactor_sensor"),
         "waste_level_sensor": waste_level,
@@ -195,116 +184,122 @@ def handle_sensor_update(client, data):
 
     # If lid closes, process transaction
     if prev_lid_state == "open" and sensors["lid_sensor"] == "closed":
-        try:
-            # Connect to MySQL
-            db = connect_to_db()
-            cursor = db.cursor()
+        handle_transaction_complete(bin_id, db)
 
-            # Get the most recent lid open time from the database
-            lid_open_query = """
+    else:
+        print(f"No changes detected for bin {bin_id}. Skipping database update.")
+
+# Create transaction record in the database
+def handle_transaction_complete(bin_id, db):
+    try:
+        # Connect to MySQL
+        db = connect_to_db()
+        cursor = db.cursor()
+
+        # Get the most recent lid open time from the database for the bin
+        lid_open_query = """
                 SELECT change_timestamp
                 FROM bins_change_log
                 WHERE bin_id = %s AND sensor_name = 'lid_sensor' AND new_value = 'open'
                 ORDER BY change_timestamp DESC
                 LIMIT 1;
             """
-            cursor.execute(lid_open_query, (bin_id,))
-            lid_open_record = cursor.fetchone()
-            
-            lid_closed_query = """
+        cursor.execute(lid_open_query, (bin_id,))
+        lid_open_record = cursor.fetchone()
+
+        # Get the most recent lid close time from the database for the bin
+        lid_closed_query = """
                 SELECT change_timestamp
                 FROM bins_change_log
                 WHERE bin_id = %s AND sensor_name = 'lid_sensor' AND new_value = 'closed'
                 ORDER BY change_timestamp DESC
                 LIMIT 1;
             """
-            cursor.execute(lid_closed_query, (bin_id,))
-            lid_closed_record = cursor.fetchone()
+        cursor.execute(lid_closed_query, (bin_id,))
+        lid_closed_record = cursor.fetchone()
 
-            if lid_open_record and lid_closed_record:
-                lid_open_time = lid_open_record[0]
-                lid_close_time = lid_closed_record[0]
-                print(f"Lid opened for bin {bin_id} at {lid_open_time}")
+        # If both lid open and lid close records are found
+        if lid_open_record and lid_closed_record:
+            lid_open_time = lid_open_record[0]
+            lid_close_time = lid_closed_record[0]
 
-                # Query the most recent weight before the lid opened
-                weight_before_query = """
+            # Get the weight just before the lid opened
+            weight_before_query = """
                     SELECT new_value, change_timestamp
                     FROM bins_change_log
                     WHERE bin_id = %s AND sensor_name = 'scale' AND change_timestamp < %s
                     ORDER BY change_timestamp DESC
                     LIMIT 1;
                 """
-                cursor.execute(weight_before_query, (bin_id, lid_open_time))
-                weight_before = cursor.fetchone()
+            cursor.execute(weight_before_query, (bin_id, lid_open_time))
+            weight_before = cursor.fetchone()
+            
+            # If weight record is found
+            if weight_before:
+                start_weight = float(weight_before[0])  # Weight just before the lid opened
+                start_time = weight_before[1]
 
-                if weight_before:
-                    start_weight = float(weight_before[0])  # Weight just before the lid opened
-                    start_time = weight_before[1]
-                    print(f"Start weight for bin {bin_id}: {start_weight} at {start_time}")
-
-                    # Query the latest weight when the lid closes
-                    weight_after_query = """
+                # Query the latest weight just before the lid was closed
+                weight_after_query = """
                         SELECT new_value, change_timestamp
                         FROM bins_change_log
                         WHERE bin_id = %s AND sensor_name = 'scale' AND change_timestamp <= %s
                         ORDER BY change_timestamp DESC
                         LIMIT 1;
                     """
-                    cursor.execute(weight_after_query, (bin_id, lid_close_time))
-                    weight_after = cursor.fetchone()
+                cursor.execute(weight_after_query, (bin_id, lid_close_time))
+                weight_after = cursor.fetchone()
 
-                    if weight_after:
-                        end_weight = float(weight_after[0])  # Weight when the lid closed
-                        end_time = weight_after[1]
-                        print(f"End weight for bin {bin_id}: {end_weight} at {end_time}")
+                # If last weight record is found
+                if weight_after:
+                    end_weight = float(weight_after[0])  # Weight when the lid closed
+                    end_time = weight_after[1]
+                    print(f"End weight for bin {bin_id}: {end_weight} at {end_time}")
 
-                        # Calculate weight difference
-                        weight_diff = end_weight - start_weight
-                        
-                        # get last valid rfid for the bin from the log
-                        rfid_query = """
+                    # Calculate weight difference
+                    weight_diff = end_weight - start_weight
+
+                    # get last RFID value to identify the user
+                    rfid_query = """
                             SELECT new_value
                             FROM bins_change_log
                             WHERE bin_id = %s AND sensor_name = 'rfid' AND new_value <> 'No value'
                             ORDER BY change_timestamp DESC
                             LIMIT 1;
                         """
-                        
-                        cursor.execute(rfid_query, (bin_id,))
-                        rfid = cursor.fetchone()[0]
 
-                        # Insert transaction record
-                        transaction_query = """
+                    cursor.execute(rfid_query, (bin_id,))
+                    rfid = cursor.fetchone()[0]
+
+                    # Insert transaction record
+                    transaction_query = """
                             INSERT INTO bins_rfid_transactions (rfid, bin_id, weight_diff, start_time, end_time)
                             VALUES (%s, %s, %s, %s, %s);
                         """
-                        cursor.execute(transaction_query, (rfid, bin_id, weight_diff, start_time, end_time))
-                        db.commit()
+                    cursor.execute(transaction_query, (rfid, bin_id, weight_diff, start_time, end_time))
+                    db.commit()
 
-                        print(f"RFID transaction recorded for bin {bin_id} (RFID: {rfid}). Weight difference: {weight_diff}")
-                    else:
-                        print(f"No weight record found when the lid closed for bin {bin_id}.")
+                    print(
+                        f"RFID transaction recorded for bin {bin_id} (RFID: {rfid}). Weight difference: {weight_diff}")
                 else:
-                    print(f"No weight record found before lid open time for bin {bin_id}.")
+                    print(f"No weight record found when the lid closed for bin {bin_id}.")
             else:
-                print(f"No lid open record found for bin {bin_id}.")
+                print(f"No weight record found before lid open time for bin {bin_id}.")
+        else:
+            print(f"No lid open record found for bin {bin_id}.")
 
-        except Exception as query_error:
-            print(f"Error processing weight records: {query_error}")
-        finally:
-            db.close()
+    except Exception as query_error:
+        print(f"Error processing weight records: {query_error}")
+    finally:
+        db.close()
 
-    else:
-        print(f"No changes detected for bin {bin_id}. Skipping database update.")
-
-
-# Main function
 def main():
     load_config_from_xml("config.xml")  # Load configuration from the XML file
+    
+    # Connect to the MQTT broker
     client = mqtt.Client()
-    client.on_connect = lambda c, u, f, rc: client.subscribe([(MQTT_TOPIC, 0), (CONFIG_REQUEST_TOPIC, 0)])
+    client.on_connect = lambda c, u, f, rc: client.subscribe([(UPDATES_TOPIC, 0), (CONFIG_REQUEST_TOPIC, 0)])
     client.on_message = on_message
-
     client.connect(BROKER_ADDRESS, BROKER_PORT, 60)
     client.loop_forever()
 
